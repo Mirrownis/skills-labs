@@ -1,6 +1,6 @@
 from interfaces.srv import MakeDB
-from interfaces.srv import CreateItem
-from interfaces.srv import DeleteItem
+from interfaces.srv import CreateGoal
+from interfaces.srv import EditGoal
 
 import rclpy
 from rclpy.node import Node
@@ -8,7 +8,7 @@ import sqlite3
 from sqlite3 import Error
 
 
-class NodeLogCore(Node):
+class NodePlanCore(Node):
 
     def __init__(self):
         """
@@ -16,21 +16,21 @@ class NodeLogCore(Node):
 
         conn: database connection
         db_file: name of the database to be used
-        srv_make_log_db: service interface to connect to a database or make a new one
-        srv_create_item: service interface to create a new item in the database
-        srv_delete_item: service interface to delete an item in the database
+        srv_make_plan_db: service interface to connect to a planning database or make a new one
+        srv_create_goal: service interface to create a new goal in the database
+        srv_edit_goal: service interface to delete a goal in the database
         """
 
-        super().__init__('node_log_core')
+        super().__init__('node_plan_core')
         self.conn = None
         self.db_file = None
-        self.srv_make_log_db = self.create_service(MakeDB, 'make_log_db', self.callback_make_log_db)
-        self.srv_create_item = self.create_service(CreateItem, 'create_item', self.callback_create_item)
-        self.srv_delete_item = self.create_service(DeleteItem, 'delete_item', self.callback_delete_item)
+        self.srv_make_plan_db = self.create_service(MakeDB, 'make_plan_db', self.callback_make_plan_db)
+        self.srv_create_goal = self.create_service(CreateGoal, 'create_goal', self.callback_create_goal)
+        self.srv_edit_goal = self.create_service(EditGoal, 'edit_goal', self.callback_edit_goal)
 
-    def callback_make_log_db(self, request, response):
+    def callback_make_plan_db(self, request, response):
         """
-        callback for making the 'log' database and its tables 'items' and 'item_logistics'
+        callback for making the 'plan' database and its tables 'goals' and 'goal_planning'
         :param request: service request containing the database name
         :param response: service response acknowledging the task
         :return: updated response
@@ -38,27 +38,26 @@ class NodeLogCore(Node):
 
         """ create a database connection to a SQLite database """
         self.db_file = r"sqlite/%s.db" % request.db_name
-        """ create two tables that hold the items in logistics and their availability """
-        sql_create_items_table = """ CREATE TABLE IF NOT EXISTS items (
+        """ create two tables that hold the goals in planning and their availability """
+        sql_create_goals_table = """ CREATE TABLE IF NOT EXISTS goals (
                                      id integer PRIMARY KEY,
-                                     item_kind text NOT NULL
+                                     goal text NOT NULL
                                      ); """
-        sql_create_item_logistics_table = """ CREATE TABLE IF NOT EXISTS item_logistics (
+        sql_create_goal_planning_table = """ CREATE TABLE IF NOT EXISTS goal_planning (
                                               id integer PRIMARY KEY,
-                                              item_id integer NOT NULL,
-                                              position text NOT NULL,
+                                              goal_id integer NOT NULL,
                                               begin_date text NOT NULL,
                                               end_date text NOT NULL,
-                                              FOREIGN KEY (item_id) REFERENCES items (id)
+                                              FOREIGN KEY (goal_id) REFERENCES goals (id)
                                               ); """
         """ create a database connection """
         self.db_make_connection()
         """ create tables """
         if self.conn is not None:
-            """ create items table """
-            self.db_make_table(sql_create_items_table)
-            """ create item_logistics table """
-            self.db_make_table(sql_create_item_logistics_table)
+            """ create goals table """
+            self.db_make_table(sql_create_goals_table)
+            """ create goal_planning table """
+            self.db_make_table(sql_create_goal_planning_table)
             """ create response """
             response.ack = True
         else:
@@ -66,40 +65,40 @@ class NodeLogCore(Node):
             response.ack = False
         return response
 
-    def callback_create_item(self, request, response):
+    def callback_create_goal(self, request, response):
         """
-        callback for creating an item in the items table
-        :param request: service request containing the item description
+        callback for creating a goal in the goals table
+        :param request: service request containing the goal description
         :param response: service response acknowledging the task
         :return: updated response
         """
 
         """ create a database connection """
         self.db_make_connection()
-        """ insert new item into table """
+        """ insert new goal into table """
         if self.conn is not None:
-            print(request.item_desc)
-            self.db_create_item(request.item_desc)
+            print(request.goal_desc)
+            self.db_create_goal(request.goal_desc)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
             response.ack = False
         return response
 
-    def callback_delete_item(self, request, response):
+    def callback_edit_goal(self, request, response):
         """
-        callback for deleting an item from the items table
-        :param request: service request containing the item id
+        callback for deleting an goal from the goals table
+        :param request: service request containing the goal id
         :param response: service response acknowledging the task
         :return: updated response
         """
 
         """ create a database connection """
         self.db_make_connection()
-        """ insert new item into table """
+        """ insert new goal into table """
         if self.conn is not None:
-            print(request.item_id)
-            self.db_delete_item(request.item_id)
+            print(request.goal_id)
+            self.db_edit_goal(request.goal_id)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -129,35 +128,35 @@ class NodeLogCore(Node):
         except Error as e:
             print(e)
 
-    def db_create_item(self, item):
+    def db_create_goal(self, goal):
         """
-        Create a new item into the 'items' table with a description
-        :param item: description of the kind of item
+        Create a new goal into the 'goals' table with a description
+        :param goal: description of the kind of goal
         """
 
-        sql = ''' INSERT INTO items(item_kind) VALUES(?) '''
+        sql = ''' INSERT INTO goals(goal_kind) VALUES(?) '''
         c = self.conn.cursor()
-        c.execute(sql, [item])
+        c.execute(sql, [goal])
         self.conn.commit()
-        print("Created item " + item)
+        print("Created goal " + goal)
 
-    def db_delete_item(self, item_id):
+    def db_edit_goal(self, goal_id):
         """
-        Delete an item from the 'items' table by id
-        :param item_id: id of the item
+        Delete a goal from the 'goals' table by id
+        :param goal_id: id of the goal
         """
 
-        sql = 'DELETE FROM items WHERE id=?'
+        sql = 'DELETE FROM goals WHERE id=?'
         c = self.conn.cursor()
-        c.execute(sql, (item_id,))
+        c.execute(sql, (goal_id,))
         self.conn.commit()
-        print("Deleted item " + item_id)
+        print("Deleted goal " + goal_id)
 
 
 def main():
     rclpy.init()
-    log_core = NodeLogCore()
-    rclpy.spin(log_core)
+    plan_core = NodePlanCore()
+    rclpy.spin(plan_core)
     rclpy.shutdown()
 
 

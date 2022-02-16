@@ -21,6 +21,7 @@ setup(
         'console_scripts': [
             'ui = main.node_ui_core:main',
             'log = main.node_log_core:main',
+            'plan = main.node_plan_core:main',
         ],
     },
 )

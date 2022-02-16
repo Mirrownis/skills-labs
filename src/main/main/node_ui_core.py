@@ -14,8 +14,8 @@ class NodeUICore(Node):
     def __init__(self):
         super().__init__('node_ui_core')
         self.node_comm = NodeUICommunicator()
-        self.node_comm.make_db("log")
-        #self.node_comm.make_db("plan")
+        self.node_comm.make_log_db("log")
+        self.node_comm.make_plan_db("plan")
         rclpy.spin_once(self.node_comm)
         self.service_choice = ""
         while True:
@@ -41,16 +41,21 @@ class NodeUICore(Node):
 class NodeUICommunicator(Node):
 
     def __init__(self):
-        super().__init__('node_ui_Communicator')
-        self.cli = self.create_client(MakeDB, 'make_db')
+        super().__init__('node_ui_communicator')
+        self.cli = None
+        self.req = None
+        self.future = None
+
+    def make_log_db(self, db_name):
+        self.cli = self.create_client(MakeDB, 'make_log_db')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = MakeDB.Request()
-        self.req.db_name = "test1"
+        self.req.db_name = db_name
         self.future = self.cli.call_async(self.req)
 
-    def make_db(self, db_name):
-        self.cli = self.create_client(MakeDB, 'make_db')
+    def make_plan_db(self, db_name):
+        self.cli = self.create_client(MakeDB, 'make_plan_db')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = MakeDB.Request()
