@@ -1,0 +1,18 @@
+# ui
+rosdep install -i --from-path src --rosdistro galactic -y
+colcon build --allow-overriding interfaces main
+. install/setup.bash
+ros2 run main ui
+
+# logistics
+. install/setup.bash
+ros2 run main log
+
+# sqlite
+sqlite3 ~/dev_ws/sqlite/log.db
+
+.tables
+
+.header on
+.mode column
+SELECT * FROM items
