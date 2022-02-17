@@ -17,7 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CreateItem.srv"
   "srv/DeleteItem.srv"
   "srv/CreateGoal.srv"
-  "srv/EditGoal.srv"
+  "srv/DeleteGoal.srv"
 )
 
 if(BUILD_TESTING)

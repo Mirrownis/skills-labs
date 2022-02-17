@@ -1,6 +1,6 @@
 from interfaces.srv import MakeDB
 from interfaces.srv import CreateGoal
-from interfaces.srv import EditGoal
+from interfaces.srv import DeleteGoal
 
 import rclpy
 from rclpy.node import Node
@@ -18,7 +18,7 @@ class NodePlanCore(Node):
         db_file: name of the database to be used
         srv_make_plan_db: service interface to connect to a planning database or make a new one
         srv_create_goal: service interface to create a new goal in the database
-        srv_edit_goal: service interface to delete a goal in the database
+        srv_delete_goal: service interface to delete a goal in the database
         """
 
         super().__init__('node_plan_core')
@@ -26,7 +26,7 @@ class NodePlanCore(Node):
         self.db_file = None
         self.srv_make_plan_db = self.create_service(MakeDB, 'make_plan_db', self.callback_make_plan_db)
         self.srv_create_goal = self.create_service(CreateGoal, 'create_goal', self.callback_create_goal)
-        self.srv_edit_goal = self.create_service(EditGoal, 'edit_goal', self.callback_edit_goal)
+        self.srv_delete_goal = self.create_service(DeleteGoal, 'delete_goal', self.callback_delete_goal)
 
     def callback_make_plan_db(self, request, response):
         """
@@ -85,9 +85,9 @@ class NodePlanCore(Node):
             response.ack = False
         return response
 
-    def callback_edit_goal(self, request, response):
+    def callback_delete_goal(self, request, response):
         """
-        callback for deleting an goal from the goals table
+        callback for deleting a goal from the goals table
         :param request: service request containing the goal id
         :param response: service response acknowledging the task
         :return: updated response
@@ -98,7 +98,7 @@ class NodePlanCore(Node):
         """ insert new goal into table """
         if self.conn is not None:
             print(request.goal_id)
-            self.db_edit_goal(request.goal_id)
+            self.db_delete_goal(request.goal_id)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -134,13 +134,13 @@ class NodePlanCore(Node):
         :param goal: description of the kind of goal
         """
 
-        sql = ''' INSERT INTO goals(goal_kind) VALUES(?) '''
+        sql = ''' INSERT INTO goals(goal) VALUES(?) '''
         c = self.conn.cursor()
         c.execute(sql, [goal])
         self.conn.commit()
         print("Created goal " + goal)
 
-    def db_edit_goal(self, goal_id):
+    def db_delete_goal(self, goal_id):
         """
         Delete a goal from the 'goals' table by id
         :param goal_id: id of the goal

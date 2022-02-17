@@ -3,6 +3,8 @@ import sys
 from interfaces.srv import MakeDB
 from interfaces.srv import CreateItem
 from interfaces.srv import DeleteItem
+from interfaces.srv import CreateGoal
+from interfaces.srv import DeleteGoal
 
 import rclpy
 from rclpy.node import Node
@@ -25,7 +27,7 @@ class NodeUICore(Node):
                                         "delete_item\n"
                                         "show_goal\n"
                                         "create_goal\n"
-                                        "edit_goal\n"
+                                        "delete_goal\n"
                                         "show_device_status\n"
                                         "close_ui\n"
                                         "---\n")
@@ -76,6 +78,22 @@ class NodeUICommunicator(Node):
             self.get_logger().info('service not available, waiting again...')
         self.req = DeleteItem.Request()
         self.req.item_id = int(input("Item ID: "))
+        self.future = self.cli.call_async(self.req)
+
+    def create_goal(self):
+        self.cli = self.create_client(CreateGoal, 'create_goal')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = CreateGoal.Request()
+        self.req.goal_desc = input("Goal Description: ")
+        self.future = self.cli.call_async(self.req)
+
+    def delete_goal(self):
+        self.cli = self.create_client(DeleteGoal, 'delete_goal')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = DeleteGoal.Request()
+        self.req.goal_id = int(input("Goal ID: "))
         self.future = self.cli.call_async(self.req)
 
 
