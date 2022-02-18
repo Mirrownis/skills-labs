@@ -13,10 +13,8 @@ ros2 run main log
 ros2 run main plan
 
 # sqlite
-sqlite3 ~/dev_ws/sqlite/log.db
-
+sqlite3 ~/dev_ws/sqlite/plan.db
 .tables
-
 .header on
 .mode column
-SELECT * FROM items;
+SELECT * FROM goal_planning;

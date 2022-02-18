@@ -5,6 +5,8 @@ from interfaces.srv import CreateItem
 from interfaces.srv import DeleteItem
 from interfaces.srv import CreateGoal
 from interfaces.srv import DeleteGoal
+from interfaces.srv import CreatePlan
+from interfaces.srv import DeletePlan
 
 import rclpy
 from rclpy.node import Node
@@ -94,6 +96,25 @@ class NodeUICommunicator(Node):
             self.get_logger().info('service not available, waiting again...')
         self.req = DeleteGoal.Request()
         self.req.goal_id = int(input("Goal ID: "))
+        self.future = self.cli.call_async(self.req)
+
+    def create_plan(self):
+        self.cli = self.create_client(CreatePlan, 'create_plan')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = CreatePlan.Request()
+        self.req.goal_id = int(input("ID of goal to achieve: "))
+        self.req.items = (input("Array of used items: "))
+        self.req.begin_time = int(input("Starting time of plan (UNIX): "))
+        self.req.end_time = int(input("Ending time of plan (UNIX): "))
+        self.future = self.cli.call_async(self.req)
+
+    def delete_plan(self):
+        self.cli = self.create_client(DeletePlan, 'delete_plan')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = DeletePlan.Request()
+        self.req.plan_id = int(input("Plan ID: "))
         self.future = self.cli.call_async(self.req)
 
 

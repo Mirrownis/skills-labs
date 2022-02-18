@@ -1,6 +1,8 @@
 from interfaces.srv import MakeDB
 from interfaces.srv import CreateGoal
 from interfaces.srv import DeleteGoal
+from interfaces.srv import CreatePlan
+from interfaces.srv import DeletePlan
 
 import rclpy
 from rclpy.node import Node
@@ -27,6 +29,8 @@ class NodePlanCore(Node):
         self.srv_make_plan_db = self.create_service(MakeDB, 'make_plan_db', self.callback_make_plan_db)
         self.srv_create_goal = self.create_service(CreateGoal, 'create_goal', self.callback_create_goal)
         self.srv_delete_goal = self.create_service(DeleteGoal, 'delete_goal', self.callback_delete_goal)
+        self.srv_create_plan = self.create_service(CreatePlan, 'create_plan', self.callback_create_plan)
+        self.srv_delete_plan = self.create_service(DeletePlan, 'delete_plan', self.callback_delete_plan)
 
     def callback_make_plan_db(self, request, response):
         """
@@ -46,8 +50,9 @@ class NodePlanCore(Node):
         sql_create_goal_planning_table = """ CREATE TABLE IF NOT EXISTS goal_planning (
                                               id integer PRIMARY KEY,
                                               goal_id integer NOT NULL,
-                                              begin_date text NOT NULL,
-                                              end_date text NOT NULL,
+                                              items text NOT NULL,
+                                              begin_date integer NOT NULL,
+                                              end_date integer NOT NULL,
                                               FOREIGN KEY (goal_id) REFERENCES goals (id)
                                               ); """
         """ create a database connection """
@@ -105,6 +110,49 @@ class NodePlanCore(Node):
             response.ack = False
         return response
 
+    def callback_create_plan(self, request, response):
+        """
+        callback for creating a plan in the goal_planning table
+        :param request: service request containing the plan description
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new plan into table """
+        if self.conn is not None:
+            print(request.goal_id)
+            print(request.items)
+            print(request.begin_time)
+            print(request.end_time)
+            self.db_create_plan([request.goal_id, request.items, request.begin_time, request.end_time])
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
+    def callback_delete_plan(self, request, response):
+        """
+        callback for deleting a plan from the goal_planning table
+        :param request: service request containing the plan id
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new goal into table """
+        if self.conn is not None:
+            print(request.plan_id)
+            self.db_delete_plan(request.plan_id)
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
     def db_make_connection(self):
         """
         create a database connection to the SQLite database
@@ -138,7 +186,7 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, [goal])
         self.conn.commit()
-        print("Created goal " + goal)
+        print("Created goal " + str(goal))
 
     def db_delete_goal(self, goal_id):
         """
@@ -150,7 +198,31 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (goal_id,))
         self.conn.commit()
-        print("Deleted goal " + goal_id)
+        print("Deleted goal " + str(goal_id))
+
+    def db_create_plan(self, plan):
+        """
+        Create a new plan in the 'goal_planning' table with an associated goal, starting and end time
+        :param plan: description of the kind of plan
+        """
+
+        sql = ''' INSERT INTO goal_planning(goal_id, items, begin_date, end_date) VALUES(?,?,?,?) '''
+        c = self.conn.cursor()
+        c.execute(sql, plan)
+        self.conn.commit()
+        print("Created plan " + str(plan))
+
+    def db_delete_plan(self, plan_id):
+        """
+        Delete a goal from the 'goals' table by id
+        :param plan_id: id of the plan
+        """
+
+        sql = 'DELETE FROM goal_planning WHERE id=?'
+        c = self.conn.cursor()
+        c.execute(sql, (plan_id,))
+        self.conn.commit()
+        print("Deleted plan " + str(plan_id))
 
 
 def main():
