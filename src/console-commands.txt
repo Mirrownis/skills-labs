@@ -18,3 +18,9 @@ sqlite3 ~/dev_ws/sqlite/plan.db
 .header on
 .mode column
 SELECT * FROM goal_planning;
+
+sqlite3 ~/dev_ws/sqlite/log.db
+.tables
+.header on
+.mode column
+SELECT * FROM items;

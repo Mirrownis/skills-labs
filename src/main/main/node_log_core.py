@@ -1,6 +1,5 @@
 from interfaces.srv import MakeDB
-from interfaces.srv import CreateItem
-from interfaces.srv import DeleteItem
+from interfaces.srv import Item
 
 import rclpy
 from rclpy.node import Node
@@ -25,8 +24,8 @@ class NodeLogCore(Node):
         self.conn = None
         self.db_file = None
         self.srv_make_log_db = self.create_service(MakeDB, 'make_log_db', self.callback_make_log_db)
-        self.srv_create_item = self.create_service(CreateItem, 'create_item', self.callback_create_item)
-        self.srv_delete_item = self.create_service(DeleteItem, 'delete_item', self.callback_delete_item)
+        self.srv_create_item = self.create_service(Item, 'create_item', self.callback_create_item)
+        self.srv_delete_item = self.create_service(Item, 'delete_item', self.callback_delete_item)
 
     def callback_make_log_db(self, request, response):
         """
@@ -41,12 +40,12 @@ class NodeLogCore(Node):
         """ create two tables that hold the items in logistics and their availability """
         sql_create_items_table = """ CREATE TABLE IF NOT EXISTS items (
                                      id integer PRIMARY KEY,
+                                     position text NOT NULL,
                                      item_kind text NOT NULL
                                      ); """
         sql_create_item_logistics_table = """ CREATE TABLE IF NOT EXISTS item_logistics (
                                               id integer PRIMARY KEY,
                                               item_id integer NOT NULL,
-                                              position text NOT NULL,
                                               begin_date text NOT NULL,
                                               end_date text NOT NULL,
                                               FOREIGN KEY (item_id) REFERENCES items (id)
@@ -79,7 +78,8 @@ class NodeLogCore(Node):
         """ insert new item into table """
         if self.conn is not None:
             print(request.item_desc)
-            self.db_create_item(request.item_desc)
+            print(request.position)
+            self.db_create_item(request.item_desc, request.position)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -118,8 +118,8 @@ class NodeLogCore(Node):
         self.db_make_connection()
         """ insert new item into table """
         if self.conn is not None:
-            print(request.item_id)
-            self.db_delete_item(request.item_id)
+            print(request.id)
+            self.db_delete_item(request.id)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -149,22 +149,23 @@ class NodeLogCore(Node):
         except Error as e:
             print(e)
 
-    def db_create_item(self, item):
+    def db_create_item(self, item_desc, position):
         """
         Create a new item into the 'items' table with a description
-        :param item: description of the kind of item
+        :param item_desc: description of the kind of item
+        :param position: location of the item
         """
 
-        sql = ''' INSERT INTO items(item_kind) VALUES(?) '''
+        sql = ''' INSERT INTO items(item_kind, position) VALUES(?,?) '''
         c = self.conn.cursor()
-        c.execute(sql, [item])
+        c.execute(sql, [item_desc, position])
         self.conn.commit()
-        print("Created item " + item)
+        print("Created item " + item_desc + " at " + position)
 
     def db_edit_item(self, item):
         """
         Edit an existing item in the 'items' table
-        :param goal: id and the new description of the goal
+        :param item: id and the new description of the item
         """
 
         sql = ''' UPDATE items
@@ -173,7 +174,7 @@ class NodeLogCore(Node):
         c = self.conn.cursor()
         c.execute(sql, [item])
         self.conn.commit()
-        print("Edited goal to" + str(item[0]))
+        print("Edited item to" + str(item[0]))
 
     def db_delete_item(self, item_id):
         """
@@ -185,7 +186,7 @@ class NodeLogCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (item_id,))
         self.conn.commit()
-        print("Deleted item " + item_id)
+        print("Deleted item " + id)
 
 
 def main():

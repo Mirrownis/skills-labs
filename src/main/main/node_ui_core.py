@@ -1,9 +1,7 @@
 import sys
 
 from interfaces.srv import MakeDB
-from interfaces.srv import CreateItem
-from interfaces.srv import EditItem
-from interfaces.srv import DeleteItem
+from interfaces.srv import Item
 from interfaces.srv import CreateGoal
 from interfaces.srv import EditGoal
 from interfaces.srv import DeleteGoal
@@ -70,27 +68,29 @@ class NodeUICommunicator(Node):
         self.future = self.cli.call_async(self.req)
 
     def create_item(self):
-        self.cli = self.create_client(CreateItem, 'create_item')
+        self.cli = self.create_client(Item, 'create_item')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
-        self.req = CreateItem.Request()
+        self.req = Item.Request()
         self.req.item_desc = input("Item Description: ")
+        item_position = "[" + input("Item position x: ") + " " + input("Item position y: ") + "]"
+        self.req.position = item_position
         self.future = self.cli.call_async(self.req)
 
     def edit_item(self):
-        self.cli = self.create_client(EditItem, 'edit_item')
+        self.cli = self.create_client(Item, 'edit_item')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
-        self.req = EditItem.Request()
+        self.req = Item.Request()
         self.req.id = input("ID of item to change: ")
         self.req.item_desc = input("New item description: ")
         self.future = self.cli.call_async(self.req)
 
     def delete_item(self):
-        self.cli = self.create_client(DeleteItem, 'delete_item')
+        self.cli = self.create_client(Item, 'delete_item')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
-        self.req = DeleteItem.Request()
+        self.req = Item.Request()
         self.req.item_id = int(input("Item ID: "))
         self.future = self.cli.call_async(self.req)
 

@@ -14,9 +14,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AddTwoInts.srv"
   "srv/MakeDB.srv"
-  "srv/CreateItem.srv"
-  "srv/EditItem.srv"
-  "srv/DeleteItem.srv"
+  "srv/Item.srv"
   "srv/CreateGoal.srv"
   "srv/EditGoal.srv"
   "srv/DeleteGoal.srv"

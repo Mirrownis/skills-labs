@@ -1,4 +1,5 @@
 int32 id
 string item_desc
+string position
 ---
 bool ack
