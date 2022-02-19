@@ -1,0 +1,7 @@
+int32 id
+int32 goal_id
+string items
+int32 begin_time
+int32 end_time
+---
+bool ack

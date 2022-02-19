@@ -4,8 +4,10 @@ from interfaces.srv import MakeDB
 from interfaces.srv import CreateItem
 from interfaces.srv import DeleteItem
 from interfaces.srv import CreateGoal
+from interfaces.srv import EditGoal
 from interfaces.srv import DeleteGoal
 from interfaces.srv import CreatePlan
+from interfaces.srv import EditPlan
 from interfaces.srv import DeletePlan
 
 import rclpy
@@ -90,6 +92,15 @@ class NodeUICommunicator(Node):
         self.req.goal_desc = input("Goal Description: ")
         self.future = self.cli.call_async(self.req)
 
+    def edit_goal(self):
+        self.cli = self.create_client(CreateGoal, 'edit_goal')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = EditGoal.Request()
+        self.req.id = input("ID of goal to change: ")
+        self.req.goal_desc = input("New goal description: ")
+        self.future = self.cli.call_async(self.req)
+
     def delete_goal(self):
         self.cli = self.create_client(DeleteGoal, 'delete_goal')
         while not self.cli.wait_for_service(timeout_sec=1.0):
@@ -107,6 +118,18 @@ class NodeUICommunicator(Node):
         self.req.items = (input("Array of used items: "))
         self.req.begin_time = int(input("Starting time of plan (UNIX): "))
         self.req.end_time = int(input("Ending time of plan (UNIX): "))
+        self.future = self.cli.call_async(self.req)
+
+    def edit_plan(self):
+        self.cli = self.create_client(CreatePlan, 'edit_plan')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = EditPlan.Request()
+        self.req.id = int(input("ID of plan to change: "))
+        self.req.goal_id = int(input("New id of goal to achieve: "))
+        self.req.items = (input("New array of used items: "))
+        self.req.begin_time = int(input("New starting time of plan (UNIX): "))
+        self.req.end_time = int(input("New ending time of plan (UNIX): "))
         self.future = self.cli.call_async(self.req)
 
     def delete_plan(self):

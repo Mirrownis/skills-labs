@@ -90,6 +90,26 @@ class NodePlanCore(Node):
             response.ack = False
         return response
 
+    def callback_edit_goal(self, request, response):
+        """
+        callback for editing a goal in the goals table
+        :param request: service request containing the id and goal description
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new goal description into table """
+        if self.conn is not None:
+            print("Change goal " + str(request.id) + " to " + request.goal_desc)
+            self.db_create_goal([request.goal_desc, request.id])
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
     def callback_delete_goal(self, request, response):
         """
         callback for deleting a goal from the goals table
@@ -127,6 +147,30 @@ class NodePlanCore(Node):
             print(request.begin_time)
             print(request.end_time)
             self.db_create_plan([request.goal_id, request.items, request.begin_time, request.end_time])
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
+    def callback_edit_plan(self, request, response):
+        """
+        callback for editing a plan in the goal_planning table
+        :param request: service request containing the id and updated plan description
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new plan into table """
+        if self.conn is not None:
+            print(request.id)
+            print(request.goal_id)
+            print(request.items)
+            print(request.begin_time)
+            print(request.end_time)
+            self.db_edit_plan([request.goal_id, request.items, request.begin_time, request.end_time])
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -188,6 +232,20 @@ class NodePlanCore(Node):
         self.conn.commit()
         print("Created goal " + str(goal))
 
+    def db_edit_goal(self, goal):
+        """
+        Edit an existing goal in the 'goals' table
+        :param goal: id and the new description of the goal
+        """
+
+        sql = ''' UPDATE goals
+                  SET goal_desc = ?
+                  WHERE id = ?'''
+        c = self.conn.cursor()
+        c.execute(sql, [goal])
+        self.conn.commit()
+        print("Edited goal to" + str(goal[0]))
+
     def db_delete_goal(self, goal_id):
         """
         Delete a goal from the 'goals' table by id
@@ -211,6 +269,23 @@ class NodePlanCore(Node):
         c.execute(sql, plan)
         self.conn.commit()
         print("Created plan " + str(plan))
+
+    def db_edit_plan(self, plan):
+        """
+        Edit an existing plan in the 'goal_planning' table
+        :param plan: id and the new description of the plan
+        """
+
+        sql = ''' UPDATE goal_planning
+                  SET goal_id = ?,
+                      items = ?,
+                      begin_time = ?,
+                      end_time = ?
+                  WHERE id = ?'''
+        c = self.conn.cursor()
+        c.execute(sql, [plan])
+        self.conn.commit()
+        print("Changed plan to " + str(plan))
 
     def db_delete_plan(self, plan_id):
         """

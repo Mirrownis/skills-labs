@@ -17,8 +17,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CreateItem.srv"
   "srv/DeleteItem.srv"
   "srv/CreateGoal.srv"
+  "srv/EditGoal.srv"
   "srv/DeleteGoal.srv"
   "srv/CreatePlan.srv"
+  "srv/EditPlan.srv"
   "srv/DeletePlan.srv"
 )
 
