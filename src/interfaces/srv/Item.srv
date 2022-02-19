@@ -3,3 +3,5 @@ string item_desc
 string position
 ---
 bool ack
+string item_desc
+string position

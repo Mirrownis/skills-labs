@@ -25,7 +25,9 @@ class NodeLogCore(Node):
         self.db_file = None
         self.srv_make_log_db = self.create_service(MakeDB, 'make_log_db', self.callback_make_log_db)
         self.srv_create_item = self.create_service(Item, 'create_item', self.callback_create_item)
+        self.srv_edit_item = self.create_service(Item, 'edit_item', self.callback_edit_item)
         self.srv_delete_item = self.create_service(Item, 'delete_item', self.callback_delete_item)
+        self.srv_show_item = self.create_service(Item, 'show_item', self.callback_show_item)
 
     def callback_make_log_db(self, request, response):
         """
@@ -126,6 +128,28 @@ class NodeLogCore(Node):
             response.ack = False
         return response
 
+    def callback_show_item(self, request, response):
+        """
+        callback for deleting an item from the items table
+        :param request: service request containing the item id
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new item into table """
+        if self.conn is not None:
+            print(request.id)
+            db_response = self.db_show_item(request.id)[0]
+            response.ack = True
+            response.position = db_response[1]
+            response.item_desc = db_response[2]
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
     def db_make_connection(self):
         """
         create a database connection to the SQLite database
@@ -186,7 +210,18 @@ class NodeLogCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (item_id,))
         self.conn.commit()
-        print("Deleted item " + id)
+        print("Deleted item " + item_id)
+
+    def db_show_item(self, item_id):
+        """
+        Query tasks by priority
+        :param item_id: id of the item to be selected
+        :return:
+        """
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM items WHERE id=?", (item_id,))
+
+        return c.fetchall()
 
 
 def main():

@@ -21,7 +21,7 @@ class NodeUICore(Node):
         self.node_comm = NodeUICommunicator()
         self.node_comm.make_log_db("log")
         self.node_comm.make_plan_db("plan")
-        rclpy.spin_once(self.node_comm)
+        rclpy.spin_until_future_complete(self.node_comm, self.node_comm.future)
         self.service_choice = ""
         while True:
             self.service_choice = input("Select a service: \n"
@@ -91,7 +91,15 @@ class NodeUICommunicator(Node):
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = Item.Request()
-        self.req.item_id = int(input("Item ID: "))
+        self.req.id = int(input("Item ID: "))
+        self.future = self.cli.call_async(self.req)
+
+    def show_item(self):
+        self.cli = self.create_client(Item, 'show_item')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = Item.Request()
+        self.req.id = int(input("Item ID: "))
         self.future = self.cli.call_async(self.req)
 
     def create_goal(self):
@@ -100,7 +108,9 @@ class NodeUICommunicator(Node):
             self.get_logger().info('service not available, waiting again...')
         self.req = CreateGoal.Request()
         self.req.goal_desc = input("Goal Description: ")
-        self.future = self.cli.call_async(self.req)
+        test1 = self.cli.call_async(self.req)
+        print(str(test1))
+        self.future = test1
 
     def edit_goal(self):
         self.cli = self.create_client(EditGoal, 'edit_goal')
