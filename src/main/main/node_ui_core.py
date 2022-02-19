@@ -2,6 +2,7 @@ import sys
 
 from interfaces.srv import MakeDB
 from interfaces.srv import CreateItem
+from interfaces.srv import EditItem
 from interfaces.srv import DeleteItem
 from interfaces.srv import CreateGoal
 from interfaces.srv import EditGoal
@@ -76,6 +77,15 @@ class NodeUICommunicator(Node):
         self.req.item_desc = input("Item Description: ")
         self.future = self.cli.call_async(self.req)
 
+    def edit_item(self):
+        self.cli = self.create_client(EditItem, 'edit_item')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = EditItem.Request()
+        self.req.id = input("ID of item to change: ")
+        self.req.item_desc = input("New item description: ")
+        self.future = self.cli.call_async(self.req)
+
     def delete_item(self):
         self.cli = self.create_client(DeleteItem, 'delete_item')
         while not self.cli.wait_for_service(timeout_sec=1.0):
@@ -93,7 +103,7 @@ class NodeUICommunicator(Node):
         self.future = self.cli.call_async(self.req)
 
     def edit_goal(self):
-        self.cli = self.create_client(CreateGoal, 'edit_goal')
+        self.cli = self.create_client(EditGoal, 'edit_goal')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = EditGoal.Request()

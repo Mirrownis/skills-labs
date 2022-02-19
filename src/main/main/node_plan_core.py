@@ -103,7 +103,7 @@ class NodePlanCore(Node):
         """ insert new goal description into table """
         if self.conn is not None:
             print("Change goal " + str(request.id) + " to " + request.goal_desc)
-            self.db_create_goal([request.goal_desc, request.id])
+            self.db_edit_goal([request.goal_desc, request.id])
             response.ack = True
         else:
             print("Error! cannot create the database connection.")

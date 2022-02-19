@@ -1,0 +1,4 @@
+int32 id
+string item_desc
+---
+bool ack

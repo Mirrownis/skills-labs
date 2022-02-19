@@ -86,6 +86,26 @@ class NodeLogCore(Node):
             response.ack = False
         return response
 
+    def callback_edit_item(self, request, response):
+        """
+        callback for editing an item in the items table
+        :param request: service request containing the id and item description
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new item description into table """
+        if self.conn is not None:
+            print("Change item " + str(request.id) + " to " + request.item_desc)
+            self.db_edit_item([request.item_desc, request.id])
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
     def callback_delete_item(self, request, response):
         """
         callback for deleting an item from the items table
@@ -140,6 +160,20 @@ class NodeLogCore(Node):
         c.execute(sql, [item])
         self.conn.commit()
         print("Created item " + item)
+
+    def db_edit_item(self, item):
+        """
+        Edit an existing item in the 'items' table
+        :param goal: id and the new description of the goal
+        """
+
+        sql = ''' UPDATE items
+                  SET item_desc = ?
+                  WHERE id = ?'''
+        c = self.conn.cursor()
+        c.execute(sql, [item])
+        self.conn.commit()
+        print("Edited goal to" + str(item[0]))
 
     def db_delete_item(self, item_id):
         """
