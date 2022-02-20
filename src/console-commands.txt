@@ -1,6 +1,12 @@
-# ui
+# setup
 rosdep install -i --from-path src --rosdistro galactic -y
 colcon build --allow-overriding interfaces main
+
+# info
+. install/setup.bash
+ros2 run main info
+
+# ui
 . install/setup.bash
 ros2 run main ui
 

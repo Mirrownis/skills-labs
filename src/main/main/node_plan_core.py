@@ -1,13 +1,14 @@
 from interfaces.srv import MakeDB
-from interfaces.srv import CreateGoal
-from interfaces.srv import DeleteGoal
+from interfaces.srv import Goal
 from interfaces.srv import CreatePlan
+from interfaces.srv import EditPlan
 from interfaces.srv import DeletePlan
 
 import rclpy
 from rclpy.node import Node
 import sqlite3
 from sqlite3 import Error
+from std_msgs.msg import String
 
 
 class NodePlanCore(Node):
@@ -26,11 +27,19 @@ class NodePlanCore(Node):
         super().__init__('node_plan_core')
         self.conn = None
         self.db_file = None
+        self.msg = String()
         self.srv_make_plan_db = self.create_service(MakeDB, 'make_plan_db', self.callback_make_plan_db)
-        self.srv_create_goal = self.create_service(CreateGoal, 'create_goal', self.callback_create_goal)
-        self.srv_delete_goal = self.create_service(DeleteGoal, 'delete_goal', self.callback_delete_goal)
+        self.srv_create_goal = self.create_service(Goal, 'create_goal', self.callback_create_goal)
+        self.srv_edit_goal = self.create_service(Goal, 'edit_goal', self.callback_edit_goal)
+        self.srv_show_goal = self.create_service(Goal, 'show_goal', self.callback_show_goal)
+        self.srv_delete_goal = self.create_service(Goal, 'delete_goal', self.callback_delete_goal)
         self.srv_create_plan = self.create_service(CreatePlan, 'create_plan', self.callback_create_plan)
+        self.srv_edit_plan = self.create_service(EditPlan, 'edit_plan', self.callback_edit_plan)
         self.srv_delete_plan = self.create_service(DeletePlan, 'delete_plan', self.callback_delete_plan)
+        self.publisher_ = self.create_publisher(String, 'user_information', 10)
+        self.msg.data = 'Good Morning from PlanCore!'
+        self.publisher_.publish(self.msg)
+        self.get_logger().info('Publishing: %s' % self.msg.data)
 
     def callback_make_plan_db(self, request, response):
         """
@@ -63,6 +72,9 @@ class NodePlanCore(Node):
             self.db_make_table(sql_create_goals_table)
             """ create goal_planning table """
             self.db_make_table(sql_create_goal_planning_table)
+            self.msg.data = 'PlanCore: made connection to database'
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             """ create response """
             response.ack = True
         else:
@@ -82,8 +94,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new goal into table """
         if self.conn is not None:
-            print(request.goal_desc)
             self.db_create_goal(request.goal_desc)
+            self.msg.data = 'PlanCore: Created goal %s!' % request.goal_desc
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -102,8 +116,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new goal description into table """
         if self.conn is not None:
-            print("Change goal " + str(request.id) + " to " + request.goal_desc)
-            self.db_edit_goal([request.goal_desc, request.id])
+            self.db_edit_goal([request.goal_desc, request.goal_id])
+            self.msg.data = 'PlanCore: Edited goal %d to %s!' % (request.goal_id, request.goal_desc)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -122,8 +138,34 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new goal into table """
         if self.conn is not None:
-            print(request.goal_id)
             self.db_delete_goal(request.goal_id)
+            self.msg.data = 'PlanCore: Deleted goal %d!' % request.goal_id
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
+            response.ack = True
+        else:
+            print("Error! cannot create the database connection.")
+            response.ack = False
+        return response
+
+    def callback_show_goal(self, request, response):
+        """
+        callback for deleting a goal from the goals table
+        :param request: service request containing the goal id
+        :param response: service response acknowledging the task
+        :return: updated response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new goal into table """
+        if self.conn is not None:
+            goal_data = self.db_show_goal(request.goal_id)[0]
+            goal_id = goal_data[0]
+            goal_description = goal_data[1]
+            self.msg.data = 'PlanCore: Item %d reads "%s"!' % (goal_id, goal_description)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -142,11 +184,11 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new plan into table """
         if self.conn is not None:
-            print(request.goal_id)
-            print(request.items)
-            print(request.begin_time)
-            print(request.end_time)
             self.db_create_plan([request.goal_id, request.items, request.begin_time, request.end_time])
+            self.msg.data = 'PlanCore: Scheduled plan %d from %d to %d, using items %s!'\
+                            % (request.goal_id, request.begin_time, request.end_time, request.items)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -165,12 +207,11 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new plan into table """
         if self.conn is not None:
-            print(request.id)
-            print(request.goal_id)
-            print(request.items)
-            print(request.begin_time)
-            print(request.end_time)
-            self.db_edit_plan([request.goal_id, request.items, request.begin_time, request.end_time])
+            self.db_edit_plan(request.id, request.goal_id, request.items, request.begin_time, request.end_time)
+            self.msg.data = 'PlanCore: Edited plan %d to goal %d from %d to %d using items %s!'\
+                            % (request.id, request.goal_id, request.begin_time, request.end_time, request.items)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -189,8 +230,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new goal into table """
         if self.conn is not None:
-            print(request.plan_id)
             self.db_delete_plan(request.plan_id)
+            self.msg.data = 'PlanCore: Deleted plan %d!' % request.plan_id
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -230,7 +273,6 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, [goal])
         self.conn.commit()
-        print("Created goal " + str(goal))
 
     def db_edit_goal(self, goal):
         """
@@ -239,12 +281,11 @@ class NodePlanCore(Node):
         """
 
         sql = ''' UPDATE goals
-                  SET goal_desc = ?
+                  SET goal = ?
                   WHERE id = ?'''
         c = self.conn.cursor()
-        c.execute(sql, [goal])
+        c.execute(sql, goal)
         self.conn.commit()
-        print("Edited goal to" + str(goal[0]))
 
     def db_delete_goal(self, goal_id):
         """
@@ -256,7 +297,19 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (goal_id,))
         self.conn.commit()
-        print("Deleted goal " + str(goal_id))
+
+    def db_show_goal(self, goal_id):
+        """
+        Query tasks by priority
+        :param goal_id: id of the goal to be selected
+        :return:
+        """
+
+        sql = "SELECT * FROM goals WHERE id=?"
+        c = self.conn.cursor()
+        c.execute(sql, (goal_id,))
+
+        return c.fetchall()
 
     def db_create_plan(self, plan):
         """
@@ -268,24 +321,27 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, plan)
         self.conn.commit()
-        print("Created plan " + str(plan))
 
-    def db_edit_plan(self, plan):
+    def db_edit_plan(self, plan_id, goal_id, items, begin_time, end_time):
         """
         Edit an existing plan in the 'goal_planning' table
-        :param plan: id and the new description of the plan
+        :param plan_id:
+        :param end_time:
+        :param begin_time:
+        :param items:
+        :param goal_id:
         """
 
+        plan = (plan_id, goal_id, items, begin_time, end_time)
         sql = ''' UPDATE goal_planning
                   SET goal_id = ?,
                       items = ?,
-                      begin_time = ?,
-                      end_time = ?
+                      begin_date = ?,
+                      end_date = ?
                   WHERE id = ?'''
         c = self.conn.cursor()
-        c.execute(sql, [plan])
+        c.execute(sql, plan)
         self.conn.commit()
-        print("Changed plan to " + str(plan))
 
     def db_delete_plan(self, plan_id):
         """
@@ -297,7 +353,6 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (plan_id,))
         self.conn.commit()
-        print("Deleted plan " + str(plan_id))
 
 
 def main():

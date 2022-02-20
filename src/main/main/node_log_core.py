@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 import sqlite3
 from sqlite3 import Error
+from std_msgs.msg import String
 
 
 class NodeLogCore(Node):
@@ -23,11 +24,18 @@ class NodeLogCore(Node):
         super().__init__('node_log_core')
         self.conn = None
         self.db_file = None
+        self.msg = String()
+
         self.srv_make_log_db = self.create_service(MakeDB, 'make_log_db', self.callback_make_log_db)
         self.srv_create_item = self.create_service(Item, 'create_item', self.callback_create_item)
         self.srv_edit_item = self.create_service(Item, 'edit_item', self.callback_edit_item)
         self.srv_delete_item = self.create_service(Item, 'delete_item', self.callback_delete_item)
         self.srv_show_item = self.create_service(Item, 'show_item', self.callback_show_item)
+        self.publisher_ = self.create_publisher(String, 'user_information', 10)
+
+        self.msg.data = 'Good Morning from LogCore!'
+        self.publisher_.publish(self.msg)
+        self.get_logger().info('Publishing: "%s"' % self.msg.data)
 
     def callback_make_log_db(self, request, response):
         """
@@ -60,6 +68,9 @@ class NodeLogCore(Node):
             self.db_make_table(sql_create_items_table)
             """ create item_logistics table """
             self.db_make_table(sql_create_item_logistics_table)
+            self.msg.data = 'LogCore: made connection to database'
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             """ create response """
             response.ack = True
         else:
@@ -82,6 +93,9 @@ class NodeLogCore(Node):
             print(request.item_desc)
             print(request.position)
             self.db_create_item(request.item_desc, request.position)
+            self.msg.data = 'LogCore: Created item %s at %s!' % (request.item_desc, str(request.position))
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -100,8 +114,10 @@ class NodeLogCore(Node):
         self.db_make_connection()
         """ insert new item description into table """
         if self.conn is not None:
-            print("Change item " + str(request.id) + " to " + request.item_desc)
-            self.db_edit_item([request.item_desc, request.id])
+            self.db_edit_item(request.item_desc, request.id)
+            self.msg.data = 'LogCore: Edited item %d to %s!' % (request.id, request.item_desc)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -122,6 +138,9 @@ class NodeLogCore(Node):
         if self.conn is not None:
             print(request.id)
             self.db_delete_item(request.id)
+            self.msg.data = 'LogCore: Deleted item %d!' % request.id
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
         else:
             print("Error! cannot create the database connection.")
@@ -140,11 +159,13 @@ class NodeLogCore(Node):
         self.db_make_connection()
         """ insert new item into table """
         if self.conn is not None:
-            print(request.id)
-            db_response = self.db_show_item(request.id)[0]
+            item_data = self.db_show_item(request.id)[0]
+            item_position = item_data[1]
+            item_description = item_data[2]
+            self.msg.data = 'LogCore: Item reads "%s" and lies at position %s!' % (item_description, item_position)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             response.ack = True
-            response.position = db_response[1]
-            response.item_desc = db_response[2]
         else:
             print("Error! cannot create the database connection.")
             response.ack = False
@@ -184,21 +205,19 @@ class NodeLogCore(Node):
         c = self.conn.cursor()
         c.execute(sql, [item_desc, position])
         self.conn.commit()
-        print("Created item " + item_desc + " at " + position)
 
-    def db_edit_item(self, item):
+    def db_edit_item(self, item_desc, id):
         """
         Edit an existing item in the 'items' table
         :param item: id and the new description of the item
         """
 
         sql = ''' UPDATE items
-                  SET item_desc = ?
+                  SET item_kind = ?
                   WHERE id = ?'''
         c = self.conn.cursor()
-        c.execute(sql, [item])
+        c.execute(sql, (item_desc, id))
         self.conn.commit()
-        print("Edited item to" + str(item[0]))
 
     def db_delete_item(self, item_id):
         """
@@ -210,7 +229,6 @@ class NodeLogCore(Node):
         c = self.conn.cursor()
         c.execute(sql, (item_id,))
         self.conn.commit()
-        print("Deleted item " + item_id)
 
     def db_show_item(self, item_id):
         """
@@ -218,8 +236,10 @@ class NodeLogCore(Node):
         :param item_id: id of the item to be selected
         :return:
         """
+
+        sql = "SELECT * FROM items WHERE id=?"
         c = self.conn.cursor()
-        c.execute("SELECT * FROM items WHERE id=?", (item_id,))
+        c.execute(sql, (item_id,))
 
         return c.fetchall()
 
