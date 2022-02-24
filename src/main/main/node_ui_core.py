@@ -14,13 +14,30 @@ from std_msgs.msg import String
 
 
 class NodeUICore(Node):
+    """
+    Core node of the ui node cluster
+    ---
+    After start-up, it connects to the logistics and planning nodes and takes user input.
+    """
+
     def __init__(self):
+        """
+        Initialize the node and its attributes, then runs start-up actions.
+        ---
+        :param self.node_comm: defines the communicator node to be used to make service calls
+        :param self.service_choice: holds the last user choice to let the communicator node execute it
+        """
         super().__init__('node_ui_core')
         self.node_comm = NodeUICommunicator()
+        self.service_choice = ""
+
+        """ instruct the logistics node to make (or connect to an existing) logistics database """
         self.node_comm.make_log_db("log")
+        """ instruct the planning node to make (or connect to an existing) planning database """
         self.node_comm.make_plan_db("plan")
         rclpy.spin_until_future_complete(self.node_comm, self.node_comm.future)
-        self.service_choice = ""
+
+        """ show the user their options, and take their input via command line input """
         while True:
             self.service_choice = input("\n---\n"
                                         "Select a service: \n"
@@ -38,6 +55,7 @@ class NodeUICore(Node):
                                         "delete_plan\n"
                                         "close_ui\n"
                                         "---\n")
+            """ exit the service, or call a service of the communicator node """
             if self.service_choice == "close_ui":
                 break
             else:
@@ -48,154 +66,355 @@ class NodeUICore(Node):
 
 
 class NodeUICommunicator(Node):
+    """
+    Communicator node of the ui node cluster
+    ---
+    Is not intended to run continuously, instead just to send service requests to other node clusters.
+    Can be called multiple times in parallel by the Core UI Node to allow for parallel execution
+    """
 
     def __init__(self):
+        """
+        Initialize the node and its attributes.
+        ---
+        :param self.cli: holds the client that calls services of other nodes
+        :param self.req: holds the request for services of other nodes
+        :param self.future: holds the response to service calls
+        """
+        
         super().__init__('node_ui_communicator')
         self.cli = None
         self.req = None
         self.future = None
 
     def make_log_db(self, db_name):
+        """
+        Calls the logistics node to make or connect to its database.
+        ---
+        Note: Doesn't need any additional input, as the database is set.
+        """
+
+        """ create service client for MakeDB interface under the name 'make_log_db' """
         self.cli = self.create_client(MakeDB, 'make_log_db')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the MakeDB interface """
         self.req = MakeDB.Request()
+        """ set the parameters of the service interface """
         self.req.db_name = db_name
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def make_plan_db(self, db_name):
+        """
+        Calls the planning node to make or connect to its database.
+        ---
+        Note: Doesn't need any additional input, as the database is set.
+        """
+
+        """ create service client for MakeDB interface under the name 'make_plan_db' """
         self.cli = self.create_client(MakeDB, 'make_plan_db')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the MakeDB interface """
         self.req = MakeDB.Request()
+        """ set the parameters of the service interface """
         self.req.db_name = db_name
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def create_item(self):
+        """
+        Calls the logistics node to create a new item in its database.
+        ---
+        Asks for an item description, which the planning node looks for when reserving items.
+        Asks for a position of the item to be used by the navigation node to find it.
+        """
+
+        """ create service client for Item interface under the name 'create_item' """
         self.cli = self.create_client(Item, 'create_item')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Item interface """
         self.req = Item.Request()
-        self.req.item_desc = input("Item Description: ")
+        """ take input for the parameters of the service interface """
+        self.req.item_kind = input("Item Description: ")
         item_position = "[" + input("Item position x: ") + " " + input("Item position y: ") + "]"
         self.req.position = item_position
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def edit_item(self):
+        """
+        Calls the logistics node to edit an existing item description manually.
+        ---
+        Asks for a new item description, which the planning node looks for when reserving items.
+        """
+
+        """ create service client for Item interface under the name 'edit_item' """
         self.cli = self.create_client(Item, 'edit_item')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Item interface """
         self.req = Item.Request()
+        """ take input for the parameters of the service interface """
         self.req.id = int(input("ID of item to change: "))
-        self.req.item_desc = input("New item description: ")
+        self.req.item_kind = input("New item description: ")
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def delete_item(self):
+        """
+        Calls the logistics node to delete an existing item.
+        ---
+        Asks for the id of the item to be deleted.
+        """
+
+        """ create service client for Item interface under the name 'delete_item' """
         self.cli = self.create_client(Item, 'delete_item')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Item interface """
         self.req = Item.Request()
+        """ take input for the parameters of the service interface """
         self.req.id = int(input("Item ID: "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def show_item(self):
+        """
+        Calls the logistics node to show an item.
+        ---
+        Asks for the id of the item to be shown.
+        ---
+        Note: The item data will be sent to the user info node.
+        """
+
+        """ create service client for Item interface under the name 'show_item' """
         self.cli = self.create_client(Item, 'show_item')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Item interface """
         self.req = Item.Request()
+        """ take input for the parameters of the service interface """
         self.req.id = int(input("Item ID: "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def create_goal(self):
+        """
+        Calls the planning node to create a new goal in its database.
+        ---
+        Asks for a goal description that lays out the actions to be executed by the navigation node.
+        """
+
+        """ create service client for Goal interface under the name 'create_goal' """
         self.cli = self.create_client(Goal, 'create_goal')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Goal interface """
         self.req = Goal.Request()
+        """ take input for the parameters of the service interface """
         self.req.goal_desc = input("Goal Description: ")
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def edit_goal(self):
+        """
+        Calls the planning node to edit an existing goal description manually.
+        ---
+        Asks for the id of the goal to be changed.
+        Asks for a new goal description that lays out the actions to be executed by the navigation node.
+        """
+
+        """ create service client for Goal interface under the name 'edit_goal' """
         self.cli = self.create_client(Goal, 'edit_goal')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Goal interface """
         self.req = Goal.Request()
+        """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to change: "))
         self.req.goal_desc = input("New goal description: ")
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def delete_goal(self):
+        """
+        Calls the planning node to delete an existing goal.
+        ---
+        Asks for the id of the goal to be deleted.
+        """
+
+        """ create service client for Goal interface under the name 'delete_goal' """
         self.cli = self.create_client(Goal, 'delete_goal')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Goal interface """
         self.req = Goal.Request()
+        """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("Goal ID: "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def show_goal(self):
+        """
+        Calls the planning node to show an existing goal.
+        ---
+        Asks for the id of the goal to be shown.
+        ---
+        Note: The item data will be sent to the user info node.
+        """
+
+        """ create service client for Goal interface under the name 'show_goal' """
         self.cli = self.create_client(Goal, 'show_goal')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Goal interface """
         self.req = Goal.Request()
+        """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("Goal ID: "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def create_plan(self):
+        """
+        Calls the planning node to edit a plans info manually.
+        ---
+        Asks for a new goal id, which holds the plan description.
+        Asks for the used item kinds, which are then looked for in the logistics database.
+        Asks for the beginning and end time of the plan, so that the plan can be scheduled
+        and the items can be reserved for the time.
+        """
+
+        """ create service client for CreatePlan interface under the name 'create_plan' """
         self.cli = self.create_client(CreatePlan, 'create_plan')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the CreatePlan interface """
         self.req = CreatePlan.Request()
+        """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to achieve: "))
         self.req.items = (input("Array of used items: "))
         self.req.begin_time = int(input("Starting time of plan (UNIX): "))
         self.req.end_time = int(input("Ending time of plan (UNIX): "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def edit_plan(self):
+        """
+        Calls the planning node to edit a plans info manually.
+        ---
+        Asks for a new goal id, the used item kinds, the beginning and end time of the plan.
+        """
+
+        """ create service client for EditPlan interface under the name 'edit_plan' """
         self.cli = self.create_client(EditPlan, 'edit_plan')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the EditPlan interface """
         self.req = EditPlan.Request()
+        """ take input for the parameters of the service interface """
         self.req.id = int(input("ID of plan to change: "))
         self.req.goal_id = int(input("New id of goal to achieve: "))
         self.req.items = input("New array of used items: ")
         self.req.begin_time = int(input("New starting time of plan (UNIX): "))
         self.req.end_time = int(input("New ending time of plan (UNIX): "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def delete_plan(self):
+        """
+        Calls the planning node to delete a plan.
+        ---
+        Asks for the id of the plan to be deleted.
+        """
+
+        """ create service client for DeletePlan interface under the name 'delete_plan' """
         self.cli = self.create_client(DeletePlan, 'delete_plan')
+        """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+        """ define the request for the DeletePlan interface """
         self.req = DeletePlan.Request()
+        """ take input for the parameters of the service interface """
         self.req.plan_id = int(input("Plan ID: "))
+        """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
 
 class NodeUIOutput(Node):
+    """
+    User information output node of the ui node cluster
+    ---
+    Intended to run on its own independently of the other nodes,
+    to allow for information display without full access to node services.
+    """
 
     def __init__(self):
+        """
+        Initialize the node and its attributes.
+        ---
+        :param self.subscription: topic "user_information" subscriber, receives node information,
+                          stores up to 100 messages in queue to be displayed as fast as possible
+        """
+
         super().__init__('node_ui_output')
         self.subscription = self.create_subscription(
             String,
             'user_information',
             self.listener_callback,
-            10)
+            100)
 
     def listener_callback(self, msg):
+        """
+        Callback function of the subscriber.
+        Displays all topic messages to the command interface with a time stamp.
+        """
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 
 def main():
+    """
+    entry point to the ui core node
+    """
+
+    """ initialise ros client library """
     rclpy.init()
+    """ start the UI Core node """
     rclpy.spin_once(NodeUICore())
+    """ close the node once it terminates """
     rclpy.shutdown()
 
 
 def info():
+    """
+    entry point to the ui communicator node
+    """
+
+    """ initialise ros client library """
     rclpy.init()
+    """ start the UI Output node """
     rclpy.spin(NodeUIOutput())
+    """ close the node once it terminates """
     rclpy.shutdown()
 
 
 if __name__ == '__main__':
+    """
+    block 1 execution to start main() when invoked
+    """
+
     main()

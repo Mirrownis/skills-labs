@@ -1,7 +1,8 @@
 int32 id
-string item_desc
+string item_kind
 string position
+int32 begin_date
+int32 end_date
 ---
 bool ack
-string item_desc
-string position
+int32[] reserved_ids
