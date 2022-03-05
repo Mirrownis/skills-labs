@@ -30,3 +30,7 @@ sqlite3 ~/dev_ws/sqlite/log.db
 .header on
 .mode column
 SELECT * FROM items;
+
+# roslaunch (launches info, plan and log)
+. install/setup.bash
+ros2 launch main main_launch.py
