@@ -3,9 +3,7 @@ import sys
 from interfaces.srv import MakeDB
 from interfaces.srv import Item
 from interfaces.srv import Goal
-from interfaces.srv import CreatePlan
-from interfaces.srv import EditPlan
-from interfaces.srv import DeletePlan
+from interfaces.srv import Plan
 
 import rclpy
 from rclpy.node import Node
@@ -36,7 +34,10 @@ class NodeUICore(Node):
         """ instruct the planning node to make (or connect to an existing) planning database """
         self.node_comm.make_plan_db("plan")
         rclpy.spin_until_future_complete(self.node_comm, self.node_comm.future)
+        """ show the user their options, and take their input via command line input """
+        self.select_service()
 
+    def select_service(self):
         """ show the user their options, and take their input via command line input """
         while True:
             self.service_choice = input("\n---\n"
@@ -297,13 +298,13 @@ class NodeUICommunicator(Node):
         and the items can be reserved for the time.
         """
 
-        """ create service client for CreatePlan interface under the name 'create_plan' """
-        self.cli = self.create_client(CreatePlan, 'create_plan')
+        """ create service client for Plan interface under the name 'create_plan' """
+        self.cli = self.create_client(Plan, 'create_plan')
         """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the CreatePlan interface """
-        self.req = CreatePlan.Request()
+        self.req = Plan.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to achieve: "))
         self.req.items = (input("Array of used items: "))
@@ -319,15 +320,15 @@ class NodeUICommunicator(Node):
         Asks for a new goal id, the used item kinds, the beginning and end time of the plan.
         """
 
-        """ create service client for EditPlan interface under the name 'edit_plan' """
-        self.cli = self.create_client(EditPlan, 'edit_plan')
+        """ create service client for Plan interface under the name 'edit_plan' """
+        self.cli = self.create_client(Plan, 'edit_plan')
         """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the EditPlan interface """
-        self.req = EditPlan.Request()
+        self.req = Plan.Request()
         """ take input for the parameters of the service interface """
-        self.req.id = int(input("ID of plan to change: "))
+        self.req.plan_id = int(input("ID of plan to change: "))
         self.req.goal_id = int(input("New id of goal to achieve: "))
         self.req.items = input("New array of used items: ")
         self.req.begin_time = int(input("New starting time of plan (UNIX): "))
@@ -342,13 +343,13 @@ class NodeUICommunicator(Node):
         Asks for the id of the plan to be deleted.
         """
 
-        """ create service client for DeletePlan interface under the name 'delete_plan' """
-        self.cli = self.create_client(DeletePlan, 'delete_plan')
+        """ create service client for Plan interface under the name 'delete_plan' """
+        self.cli = self.create_client(Plan, 'delete_plan')
         """ wait for the server to be available """
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the DeletePlan interface """
-        self.req = DeletePlan.Request()
+        self.req = Plan.Request()
         """ take input for the parameters of the service interface """
         self.req.plan_id = int(input("Plan ID: "))
         """ call the service as defined above """

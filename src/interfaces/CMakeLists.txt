@@ -16,9 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MakeDB.srv"
   "srv/Item.srv"
   "srv/Goal.srv"
-  "srv/CreatePlan.srv"
-  "srv/EditPlan.srv"
-  "srv/DeletePlan.srv"
+  "srv/Plan.srv"
 )
 
 if(BUILD_TESTING)

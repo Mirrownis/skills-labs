@@ -1,3 +1,4 @@
+int32 plan_id
 int32 goal_id
 string items
 int32 begin_time

@@ -1,8 +1,6 @@
 from interfaces.srv import MakeDB
 from interfaces.srv import Goal
-from interfaces.srv import CreatePlan
-from interfaces.srv import EditPlan
-from interfaces.srv import DeletePlan
+from interfaces.srv import Plan
 from interfaces.srv import Item
 
 import rclpy
@@ -50,9 +48,9 @@ class NodePlanCore(Node):
         self.srv_edit_goal = self.create_service(Goal, 'edit_goal', self.callback_edit_goal)
         self.srv_show_goal = self.create_service(Goal, 'show_goal', self.callback_show_goal)
         self.srv_delete_goal = self.create_service(Goal, 'delete_goal', self.callback_delete_goal)
-        self.srv_create_plan = self.create_service(CreatePlan, 'create_plan', self.callback_create_plan)
-        self.srv_edit_plan = self.create_service(EditPlan, 'edit_plan', self.callback_edit_plan)
-        self.srv_delete_plan = self.create_service(DeletePlan, 'delete_plan', self.callback_delete_plan)
+        self.srv_create_plan = self.create_service(Plan, 'create_plan', self.callback_create_plan)
+        self.srv_edit_plan = self.create_service(Plan, 'edit_plan', self.callback_edit_plan)
+        self.srv_delete_plan = self.create_service(Plan, 'delete_plan', self.callback_delete_plan)
         self.publisher_ = self.create_publisher(String, 'user_information', 10)
 
         """ sends a message to user info to make sure connections are working """
@@ -275,10 +273,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ change details of plan in table """
         if self.conn is not None:
-            self.db_edit_plan(request.id, request.goal_id, request.items, request.begin_time, request.end_time)
+            self.db_edit_plan(request.plan_id, request.goal_id, request.items, request.begin_time, request.end_time)
             """ inform user about action """
             self.msg.data = 'PlanCore: Edited plan %d to goal %d from %d to %d using items %s!' \
-                            % (request.id, request.goal_id, request.begin_time, request.end_time, request.items)
+                            % (request.plan_id, request.goal_id, request.begin_time, request.end_time, request.items)
             self.publisher_.publish(self.msg)
             self.get_logger().info('Publishing: %s' % self.msg.data)
             """ send acknowledgement to indicate successful task """
