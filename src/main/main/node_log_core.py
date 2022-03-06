@@ -49,7 +49,7 @@ class NodeLogCore(Node):
         """ sends a message to user info to make sure connections are working """
         self.msg.data = 'Good Morning from LogCore!'
         self.publisher_.publish(self.msg)
-        self.get_logger().info('Publishing: "%s"' % self.msg.data)
+        self.get_logger().info('Publishing: %s' % self.msg.data)
 
     def callback_make_log_db(self, request, response):
         """
