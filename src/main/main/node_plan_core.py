@@ -39,7 +39,7 @@ class NodePlanCore(Node):
 
         super().__init__('node_plan_core')
         self.conn = None
-        self.db_file = None
+        self.db_file = r"sqlite/plan.db"
         self.msg = String()
         self.node_comm = NodePlanCommunicator()
 
@@ -61,13 +61,11 @@ class NodePlanCore(Node):
     def callback_make_plan_db(self, request, response):
         """
         callback for making the 'plan' database and its tables 'goals' and 'goal_planning'
-        :param request: service request containing the database name
+        :param request: service request
         :param response: service response acknowledging the task
         :return: acknowledgement of the task
         """
 
-        """ create a database connection to a SQLite database """
-        self.db_file = r"sqlite/%s.db" % request.db_name
         """
         create table that holds the goals in the planning database:
         -- id: unique identifier of each individual goal

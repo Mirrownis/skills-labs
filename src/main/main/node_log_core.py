@@ -35,7 +35,7 @@ class NodeLogCore(Node):
 
         super().__init__('node_log_core')
         self.conn = None
-        self.db_file = None
+        self.db_file = r"sqlite/log.db"
         self.msg = String()
 
         self.srv_make_log_db = self.create_service(MakeDB, 'make_log_db', self.callback_make_log_db)
@@ -59,8 +59,6 @@ class NodeLogCore(Node):
         :return: acknowledgement of the task
         """
 
-        """ create a database connection to a SQLite database """
-        self.db_file = r"sqlite/%s.db" % request.db_name
         """
         create table that holds the items in logistics:
         -- id: unique identifier of each individual item

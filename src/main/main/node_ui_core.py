@@ -30,9 +30,9 @@ class NodeUICore(Node):
         self.service_choice = ""
 
         """ instruct the logistics node to make (or connect to an existing) logistics database """
-        self.node_comm.make_log_db("log")
+        self.node_comm.make_log_db()
         """ instruct the planning node to make (or connect to an existing) planning database """
-        self.node_comm.make_plan_db("plan")
+        self.node_comm.make_plan_db()
         rclpy.spin_until_future_complete(self.node_comm, self.node_comm.future)
         """ show the user their options, and take their input via command line input """
         self.select_service()
@@ -88,7 +88,7 @@ class NodeUICommunicator(Node):
         self.req = None
         self.future = None
 
-    def make_log_db(self, db_name):
+    def make_log_db(self):
         """
         Calls the logistics node to make or connect to its database.
         ---
@@ -102,12 +102,10 @@ class NodeUICommunicator(Node):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the MakeDB interface """
         self.req = MakeDB.Request()
-        """ set the parameters of the service interface """
-        self.req.db_name = db_name
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
-    def make_plan_db(self, db_name):
+    def make_plan_db(self):
         """
         Calls the planning node to make or connect to its database.
         ---
@@ -121,8 +119,6 @@ class NodeUICommunicator(Node):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the MakeDB interface """
         self.req = MakeDB.Request()
-        """ set the parameters of the service interface """
-        self.req.db_name = db_name
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
