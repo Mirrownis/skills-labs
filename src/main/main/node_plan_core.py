@@ -71,12 +71,29 @@ class NodePlanCore(Node):
         """
         create table that holds the goals in the planning database:
         -- id: unique identifier of each individual goal
-        -- goal: description of the task for the navigation node
+        -- goal: description of the task for users
+        -- instructions: machine instructions for the planning node
+        -- items: the kind of items needed
+        -- room_kind: the kind of room to be reserved for the goal
         """
         sql_create_goals_table = """ CREATE TABLE IF NOT EXISTS goals (
                                      id integer PRIMARY KEY,
-                                     goal text NOT NULL
+                                     goal text NOT NULL,
+                                     instructions text NOT NULL,
+                                     items text,
+                                     room_kind text NOT NULL
                                      ); """
+
+        """
+        create table that holds the rooms in the planning database:
+        -- id: unique identifier of each individual room
+        -- room_kind: description of the room for generating a plan
+        """
+        sql_create_rooms_table = """ CREATE TABLE IF NOT EXISTS goals (
+                                     id integer PRIMARY KEY,
+                                     room_kind text NOT NULL
+                                     ); """
+
         """
         create table that holds the scheduled plans:
         -- id: unique identifier of the scheduled plan
@@ -88,7 +105,8 @@ class NodePlanCore(Node):
         sql_create_goal_planning_table = """ CREATE TABLE IF NOT EXISTS goal_planning (
                                               id integer PRIMARY KEY,
                                               goal_id integer NOT NULL,
-                                              items text NOT NULL,
+                                              room_id integer NOT NULL,
+                                              item_ids text NOT NULL,
                                               begin_date integer NOT NULL,
                                               end_date integer NOT NULL,
                                               FOREIGN KEY (goal_id) REFERENCES goals (id)
@@ -99,6 +117,8 @@ class NodePlanCore(Node):
         if self.conn is not None:
             """ create "goals" table """
             self.db_make_table(sql_create_goals_table)
+            """ create "rooms" table """
+            self.db_make_table(sql_create_rooms_table)
             """ create "goal_planning" table """
             self.db_make_table(sql_create_goal_planning_table)
             """ inform user about action """
