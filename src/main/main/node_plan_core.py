@@ -218,7 +218,7 @@ class NodePlanCore(Node):
 
     def callback_show_goal(self, request, response):
         """
-        callback for deleting a goal from the goals table
+        callback for showing a goal in the goals table
         :param request: service request containing the goal id
         :param response: service response acknowledging the task
         :return: acknowledgement of the task
@@ -340,6 +340,40 @@ class NodePlanCore(Node):
             """ remove old plan from schedule """
             NodePlanScheduler.remove_from_schedule(request.plan_id)
 
+            """ send acknowledgement to indicate successful task """
+            response.ack = True
+        else:
+            """ output an error message """
+            self.get_logger().info("Error! cannot create the database connection.")
+            """ create false acknowledgement to indicate failed task """
+            response.ack = False
+        return response
+
+    def callback_show_plan(self, request, response):
+        """
+        callback for showing a plan in the goal_planning table
+        :param request: service request containing the plan id
+        :param response: service response acknowledging the task
+        :return: acknowledgement of the task
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ insert new goal into table """
+        if self.conn is not None:
+            """ read the description of the specified plan from the table """
+            plan_data = self.db_show_plan(request.plan_id)[0]
+            plan_id = plan_data[0]
+            goal_id = plan_data[1]
+            room_id = plan_data[2]
+            item_ids = plan_data[3]
+            begin_date = plan_data[4]
+            end_date = plan_data[5]
+            """ inform user about action and send requested details """
+            self.msg.data = 'PlanCore: Plan %d reads "goal: %d, room: %d, item ids: %s, begin date: %d, end date: %d"!'\
+                            % (plan_id, goal_id, room_id, item_ids, begin_date, end_date)
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
             """ send acknowledgement to indicate successful task """
             response.ack = True
         else:
@@ -489,6 +523,22 @@ class NodePlanCore(Node):
         """ execute the sql statement with the given id """
         c.execute(sql, (plan_id,))
         self.conn.commit()
+
+    def db_show_plan(self, plan_id):
+        """
+        Show plan with the provided id
+        :param plan_id: id of the plan to be shown
+        :return: plan data from table
+        """
+
+        """ build a SELECT FROM sql statement from the provided id """
+        sql = "SELECT * FROM goal_planning WHERE id=?"
+        """ make cursor to interact with the table """
+        c = self.conn.cursor()
+        """ execute the sql statement with the given id """
+        c.execute(sql, (plan_id,))
+        """ return the plan description to the callback function """
+        return c.fetchall()
 
     def db_get_backlog(self, time):
         """
