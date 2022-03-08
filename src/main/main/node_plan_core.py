@@ -9,6 +9,8 @@ import sqlite3
 from sqlite3 import Error
 from std_msgs.msg import String
 
+from .node_plan_scheduler import NodePlanScheduler
+
 
 class NodePlanCore(Node):
     """
@@ -52,7 +54,6 @@ class NodePlanCore(Node):
         self.srv_create_plan = self.create_service(Plan, 'create_plan', self.callback_create_plan)
         self.srv_edit_plan = self.create_service(Plan, 'edit_plan', self.callback_edit_plan)
         self.srv_delete_plan = self.create_service(Plan, 'delete_plan', self.callback_delete_plan)
-        self.srv_get_backlog = self.create_service(Plan, 'get_backlog', self.callback_get_backlog)
         self.publisher_ = self.create_publisher(String, 'user_information', 10)
 
         """ sends a message to user info to make sure connections are working """
@@ -264,14 +265,18 @@ class NodePlanCore(Node):
             """ if the log core node can reserve the needed items, proceed """
             if reserve_result.reserved_ids is not None:
                 """ save the plan in the db to execute """
-                self.db_create_plan([request.goal_id, str(reserve_result.reserved_ids),
-                                     request.begin_date, request.end_date])
+                plan_id = self.db_create_plan([request.goal_id, str(reserve_result.reserved_ids),
+                                            request.begin_date, request.end_date])
                 """ inform user about action """
                 self.msg.data = 'PlanCore: Scheduled plan %d from %d to %d, using items %s!' \
                                 % (request.goal_id, request.begin_date, request.end_date,
                                    str(reserve_result.reserved_ids))
                 self.publisher_.publish(self.msg)
                 self.get_logger().info('Publishing: %s' % self.msg.data)
+
+                """ send plan to scheduler """
+                NodePlanScheduler.add_to_schedule(plan_id, request.begin_date)
+
                 """ send acknowledgement to indicate successful task """
                 response.ack = True
         else:
@@ -299,6 +304,12 @@ class NodePlanCore(Node):
                             % (request.plan_id, request.goal_id, request.begin_date, request.end_date, request.items)
             self.publisher_.publish(self.msg)
             self.get_logger().info('Publishing: %s' % self.msg.data)
+
+            """ remove old plan from schedule """
+            NodePlanScheduler.remove_from_schedule(request.plan_id)
+            """ add plan with new begin date """
+            NodePlanScheduler.add_to_schedule(request.plan_id, request.begin_date)
+
             """ send acknowledgement to indicate successful task """
             response.ack = True
         else:
@@ -325,36 +336,12 @@ class NodePlanCore(Node):
             self.msg.data = 'PlanCore: Deleted plan %d!' % request.plan_id
             self.publisher_.publish(self.msg)
             self.get_logger().info('Publishing: %s' % self.msg.data)
+
+            """ remove old plan from schedule """
+            NodePlanScheduler.remove_from_schedule(request.plan_id)
+
             """ send acknowledgement to indicate successful task """
             response.ack = True
-        else:
-            """ output an error message """
-            self.get_logger().info("Error! cannot create the database connection.")
-            """ create false acknowledgement to indicate failed task """
-            response.ack = False
-        return response
-
-    def callback_get_backlog(self, request, response):
-        """
-        callback for finding all already scheduled plans on the database
-        :param request: service request
-        :param response: service response acknowledging the task and sending the found database entries
-        :return: response
-        """
-
-        """ create a database connection """
-        self.db_make_connection()
-        """ get plans from database """
-        if self.conn is not None:
-            backlog = self.db_get_backlog(request.begin_date)
-            """ inform user about action """
-            self.msg.data = 'PlanCore: Getting backlog of scheduled plans after %d!' % request.plan_id
-            self.publisher_.publish(self.msg)
-            self.get_logger().info('Publishing: %s' % self.msg.data)
-            """ send acknowledgement to indicate successful task """
-            response.ack = True
-            response.plan_ids = [entries[0] for entries in backlog]
-            response.begin_dates = [entries[1] for entries in backlog]
         else:
             """ output an error message """
             self.get_logger().info("Error! cannot create the database connection.")
@@ -453,6 +440,7 @@ class NodePlanCore(Node):
         """
         Create a new plan in the 'goal_planning' table with an associated goal, starting and end date
         :param plan: data of the plan as a tuple of goal_id, begin_date and end_date
+        :return: id of the created plan
         """
 
         """ build an INSERT INTO sql statement from the provided parameters """
@@ -462,6 +450,8 @@ class NodePlanCore(Node):
         """ execute the sql statement with the given plan """
         c.execute(sql, plan)
         self.conn.commit()
+        """ return the id of the plan for the scheduler """
+        return c.lastrowid
 
     def db_edit_plan(self, plan_id, goal_id, items, begin_date, end_date):
         """
@@ -513,8 +503,8 @@ class NodePlanCore(Node):
         c = self.conn.cursor()
         """ execute the sql statement with the given time """
         c.execute(sql, (time,))
-        """ return the goal description to the callback function """
-        return c.fetchall()
+        """ return the list of scheduled plans """
+        return list(c.fetchall())
 
 
 class NodePlanCommunicator(Node):

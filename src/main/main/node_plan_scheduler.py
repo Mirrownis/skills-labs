@@ -1,10 +1,7 @@
-from interfaces.srv import Goal
 from interfaces.srv import Plan
 
 import rclpy
 from rclpy.node import Node
-import sqlite3
-from sqlite3 import Error
 from std_msgs.msg import String
 import time
 import threading
@@ -35,9 +32,7 @@ class NodePlanScheduler(Node):
         self.wall_time = 0
         self.ticker = threading.Event()
         self.scheduled_plans = []
-        self.conn = None
-        self.db_file = r"sqlite/plan.db"
-        self.db_make_connection()
+
         """ fetch existing plans """
         self.get_backlog()
         """ start scheduling service """
@@ -49,29 +44,41 @@ class NodePlanScheduler(Node):
         and adds those in the future to the schedule
         """
 
+        """ import NodePlanCore to access database """
+        from .node_plan_core import NodePlanCore
+
         """ update time """
         self.wall_time = int(time.time())
 
-        """ create service client for Item interface under the name 'reserve_item' """
-        self.cli = self.create_client(Plan, 'get_backlog')
-        """ wait for the server to be available """
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        """ define the request for the Plan interface """
-        self.req = Plan.Request()
-        """ set the parameters of the service interface """
-        self.req.begin_date = self.wall_time
-        """ call the service as defined above """
-        self.future = self.cli.call_async(self.req)
+        """ get backlog from NodePlanCore """
+        self.scheduled_plans = NodePlanCore.db_get_backlog(self.wall_time)
 
-        """ save the results """
-        backlog_result_ids = self.node_comm.future.result().plan_id
-        backlog_result_begin_date = self.node_comm.future.result().begin_date
-        """ arrange the backlog in the schedule """
-        self.scheduled_plans = zip(backlog_result_ids, backlog_result_begin_date)
-
-        """ sort backlog """
+        """ sort schedule """
         self.sort_schedule()
+
+    def add_to_schedule(self, plan_id, begin_date):
+        """
+        add a plan to the schedule, called when a new plan is made or an existing one is changed
+        in the plan core node
+        :param plan_id: the id of the plan
+        :param begin_date: the begin date of the plan
+        """
+
+        """ insert plan into schedule """
+        schedule_entry = (plan_id, begin_date)
+        self.scheduled_plans.append(schedule_entry)
+
+        """ sort schedule """
+        self.sort_schedule()
+
+    def remove_from_schedule(self, plan_id):
+        """
+        remove a plan from the schedule, called when a plan is deleted or changed
+        :param plan_id: id of the plan to be removed
+        """
+
+        """ remove plan from schedule """
+        self.scheduled_plans = list(filter(lambda x: x[0] != plan_id, self.scheduled_plans))
 
     def sort_schedule(self):
         """
@@ -115,10 +122,6 @@ class NodePlanScheduler(Node):
         self.req.end_time = int(input("New ending time of plan (UNIX): "))
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
-
-    def check_schedule(self):
-        while not self.ticker.wait(self.loop_intervall):
-            self.wall_time = int(time.time())
 
 
 def main():
