@@ -288,7 +288,7 @@ class NodeUICommunicator(Node):
         ---
         Asks for a new goal id, which holds the plan description.
         Asks for the used item kinds, which are then looked for in the logistics database.
-        Asks for the beginning and end time of the plan, so that the plan can be scheduled
+        Asks for the beginning and end date of the plan, so that the plan can be scheduled
         and the items can be reserved for the time.
         """
 
@@ -302,16 +302,16 @@ class NodeUICommunicator(Node):
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to achieve: "))
         self.req.items = (input("Array of used items: "))
-        self.req.begin_time = int(input("Starting time of plan (UNIX): "))
-        self.req.end_time = int(input("Ending time of plan (UNIX): "))
+        self.req.begin_date = int(input("Starting date of plan (UNIX): "))
+        self.req.end_date = int(input("Ending date of plan (UNIX): "))
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def edit_plan(self):
         """
-        Calls the planning node to edit a plans info manually.
+        Calls the planning node to edit a plan's info manually.
         ---
-        Asks for a new goal id, the used item kinds, the beginning and end time of the plan.
+        Asks for a new goal id, the used item kinds, the beginning and end date of the plan.
         """
 
         """ create service client for Plan interface under the name 'edit_plan' """
@@ -325,8 +325,8 @@ class NodeUICommunicator(Node):
         self.req.plan_id = int(input("ID of plan to change: "))
         self.req.goal_id = int(input("New id of goal to achieve: "))
         self.req.items = input("New array of used items: ")
-        self.req.begin_time = int(input("New starting time of plan (UNIX): "))
-        self.req.end_time = int(input("New ending time of plan (UNIX): "))
+        self.req.begin_date = int(input("New starting date of plan (UNIX): "))
+        self.req.end_date = int(input("New ending date of plan (UNIX): "))
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 

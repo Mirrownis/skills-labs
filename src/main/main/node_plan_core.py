@@ -34,6 +34,7 @@ class NodePlanCore(Node):
         :param self.srv_create_plan: service interface to create a new goal in the database
         :param self.srv_edit_plan: service interface to edit a plan in the database
         :param self.srv_delete_plan: service interface to delete a plan from the database
+        :param self.srv_get_backlog: service interface to find all already scheduled plans on the database
         :param self.publisher_: publisher for user info node (see self.msg)
         """
 
@@ -51,6 +52,7 @@ class NodePlanCore(Node):
         self.srv_create_plan = self.create_service(Plan, 'create_plan', self.callback_create_plan)
         self.srv_edit_plan = self.create_service(Plan, 'edit_plan', self.callback_edit_plan)
         self.srv_delete_plan = self.create_service(Plan, 'delete_plan', self.callback_delete_plan)
+        self.srv_get_backlog = self.create_service(Plan, 'get_backlog', self.callback_get_backlog)
         self.publisher_ = self.create_publisher(String, 'user_information', 10)
 
         """ sends a message to user info to make sure connections are working """
@@ -97,8 +99,8 @@ class NodePlanCore(Node):
         -- id: unique identifier of the scheduled plan
         -- goal_id: number of the goal planned, non-unique in goal_planning
         -- items: list of the needed items (FORMAT: thing1 thing2 thing3)
-        -- begin_date: starting time of the plan
-        -- end_date: ending time of the plan
+        -- begin_date: starting date of the plan
+        -- end_date: ending date of the plan
         """
         sql_create_goal_planning_table = """ CREATE TABLE IF NOT EXISTS goal_planning (
                                               id integer PRIMARY KEY,
@@ -246,7 +248,7 @@ class NodePlanCore(Node):
         """
         callback for creating a plan in the goal_planning table
         :param request: service request containing the plan details,
-                        including needed items and scheduled time
+                        including needed items and scheduled date
         :param response: service response acknowledging the task
         :return: acknowledgement of the task
         """
@@ -256,17 +258,17 @@ class NodePlanCore(Node):
         """ insert new plan into table """
         if self.conn is not None:
             """ reserve the needed items from the log core node """
-            self.node_comm.reserve_item(request.items, request.begin_time, request.end_time)
+            self.node_comm.reserve_item(request.items, request.begin_date, request.end_date)
             rclpy.spin_once(self.node_comm)
             reserve_result = self.node_comm.future.result()
             """ if the log core node can reserve the needed items, proceed """
             if reserve_result.reserved_ids is not None:
                 """ save the plan in the db to execute """
                 self.db_create_plan([request.goal_id, str(reserve_result.reserved_ids),
-                                     request.begin_time, request.end_time])
+                                     request.begin_date, request.end_date])
                 """ inform user about action """
                 self.msg.data = 'PlanCore: Scheduled plan %d from %d to %d, using items %s!' \
-                                % (request.goal_id, request.begin_time, request.end_time,
+                                % (request.goal_id, request.begin_date, request.end_date,
                                    str(reserve_result.reserved_ids))
                 self.publisher_.publish(self.msg)
                 self.get_logger().info('Publishing: %s' % self.msg.data)
@@ -291,10 +293,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ change details of plan in table """
         if self.conn is not None:
-            self.db_edit_plan(request.plan_id, request.goal_id, request.items, request.begin_time, request.end_time)
+            self.db_edit_plan(request.plan_id, request.goal_id, request.items, request.begin_date, request.end_date)
             """ inform user about action """
             self.msg.data = 'PlanCore: Edited plan %d to goal %d from %d to %d using items %s!' \
-                            % (request.plan_id, request.goal_id, request.begin_time, request.end_time, request.items)
+                            % (request.plan_id, request.goal_id, request.begin_date, request.end_date, request.items)
             self.publisher_.publish(self.msg)
             self.get_logger().info('Publishing: %s' % self.msg.data)
             """ send acknowledgement to indicate successful task """
@@ -325,6 +327,34 @@ class NodePlanCore(Node):
             self.get_logger().info('Publishing: %s' % self.msg.data)
             """ send acknowledgement to indicate successful task """
             response.ack = True
+        else:
+            """ output an error message """
+            self.get_logger().info("Error! cannot create the database connection.")
+            """ create false acknowledgement to indicate failed task """
+            response.ack = False
+        return response
+
+    def callback_get_backlog(self, request, response):
+        """
+        callback for finding all already scheduled plans on the database
+        :param request: service request
+        :param response: service response acknowledging the task and sending the found database entries
+        :return: response
+        """
+
+        """ create a database connection """
+        self.db_make_connection()
+        """ get plans from database """
+        if self.conn is not None:
+            backlog = self.db_get_backlog(request.begin_date)
+            """ inform user about action """
+            self.msg.data = 'PlanCore: Getting backlog of scheduled plans after %d!' % request.plan_id
+            self.publisher_.publish(self.msg)
+            self.get_logger().info('Publishing: %s' % self.msg.data)
+            """ send acknowledgement to indicate successful task """
+            response.ack = True
+            response.plan_ids = [entries[0] for entries in backlog]
+            response.begin_dates = [entries[1] for entries in backlog]
         else:
             """ output an error message """
             self.get_logger().info("Error! cannot create the database connection.")
@@ -421,7 +451,7 @@ class NodePlanCore(Node):
 
     def db_create_plan(self, plan):
         """
-        Create a new plan in the 'goal_planning' table with an associated goal, starting and end time
+        Create a new plan in the 'goal_planning' table with an associated goal, starting and end date
         :param plan: data of the plan as a tuple of goal_id, begin_date and end_date
         """
 
@@ -433,14 +463,14 @@ class NodePlanCore(Node):
         c.execute(sql, plan)
         self.conn.commit()
 
-    def db_edit_plan(self, plan_id, goal_id, items, begin_time, end_time):
+    def db_edit_plan(self, plan_id, goal_id, items, begin_date, end_date):
         """
         Edit an existing plan in the 'goal_planning' table
         :param plan_id: id number of plan to be changed
         :param goal_id: new id of the associated goal to be implemented
         :param items: new list of items to be used
-        :param begin_time: new starting time of the scheduled plan
-        :param end_time: new end time of the scheduled plan
+        :param begin_date: new starting date of the scheduled plan
+        :param end_date: new end date of the scheduled plan
         """
 
         """ build an UPDATE sql statement from the provided parameters """
@@ -453,7 +483,7 @@ class NodePlanCore(Node):
         """ make cursor to interact with the table """
         c = self.conn.cursor()
         """ execute the sql statement with the given parameters """
-        c.execute(sql, (goal_id, items, begin_time, end_time, plan_id))
+        c.execute(sql, (goal_id, items, begin_date, end_date, plan_id))
         self.conn.commit()
 
     def db_delete_plan(self, plan_id):
@@ -469,6 +499,22 @@ class NodePlanCore(Node):
         """ execute the sql statement with the given id """
         c.execute(sql, (plan_id,))
         self.conn.commit()
+
+    def db_get_backlog(self, time):
+        """
+        Get all plans that are already scheduled from the database
+        :param time: current date, fetches all entries that begin after this
+        :return: plan ids and begin dates from table
+        """
+
+        """ build a SELECT FROM sql statement from the provided id """
+        sql = "SELECT plan_id, begin_date FROM goal_planning WHERE begin_date >= ?"
+        """ make cursor to interact with the table """
+        c = self.conn.cursor()
+        """ execute the sql statement with the given time """
+        c.execute(sql, (time,))
+        """ return the goal description to the callback function """
+        return c.fetchall()
 
 
 class NodePlanCommunicator(Node):
@@ -497,8 +543,8 @@ class NodePlanCommunicator(Node):
         Calls the logistics node to reserve an item for a plan
         ---
         :param item_kind: the list of item kinds needed for the plan
-        :param begin_date: starting time of the plan
-        :param end_date: end time of the plan
+        :param begin_date: starting date of the plan
+        :param end_date: end date of the plan
         """
 
         """ create service client for Item interface under the name 'reserve_item' """

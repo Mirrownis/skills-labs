@@ -12,7 +12,7 @@ def generate_launch_description():
             package='main',
             executable='log',
             parameters=[
-                {'--disable-rosout-logs'}
+                {'--disable-stdout-logs'}
             ],
         ),
         Node(

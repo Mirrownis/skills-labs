@@ -74,8 +74,8 @@ class NodeLogCore(Node):
         create table that holds the item reservations:
         id: unique identifier of the item reservation
         item_id: number of the item reserved, non-unique in reservations
-        begin_date: starting time of the reservation
-        end_date: ending time of the reservation
+        begin_date: starting date of the reservation
+        end_date: ending date of the reservation
         """
         sql_create_item_logistics_table = """ CREATE TABLE IF NOT EXISTS item_logistics (
                                               id integer PRIMARY KEY,
@@ -368,7 +368,7 @@ class NodeLogCore(Node):
                       "(end_date < ? AND end_date < ?))"
                 """ make cursor to interact with the table """
                 c = self.conn.cursor()
-                """ execute the sql statement with the given item, the starting and end time """
+                """ execute the sql statement with the given item, the starting and end date """
                 c.execute(sql, (possible_item[0], begin_date, end_date, begin_date, end_date))
                 """ check if at least one item could be reserved """
                 row = c.fetchone()
