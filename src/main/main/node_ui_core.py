@@ -219,6 +219,9 @@ class NodeUICommunicator(Node):
         self.req = Goal.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_desc = input("Goal Description: ")
+        self.req.instructions = input("Machine Instructions: ")
+        self.req.items = input("Items: ")
+        self.req.room_kind = input("Kind of Room: ")
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
@@ -239,7 +242,10 @@ class NodeUICommunicator(Node):
         self.req = Goal.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to change: "))
-        self.req.goal_desc = input("New goal description: ")
+        self.req.goal_desc = input("Goal Description: ")
+        self.req.instructions = input("Machine Instructions: ")
+        self.req.items = input("Items: ")
+        self.req.room_kind = input("Kind of Room: ")
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
@@ -302,7 +308,6 @@ class NodeUICommunicator(Node):
         self.req = Plan.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to achieve: "))
-        self.req.items = (input("Array of used items: "))
         self.req.begin_date = int(input("Starting date of plan (UNIX): "))
         self.req.end_date = int(input("Ending date of plan (UNIX): "))
         """ call the service as defined above """
@@ -325,7 +330,6 @@ class NodeUICommunicator(Node):
         """ take input for the parameters of the service interface """
         self.req.plan_id = int(input("ID of plan to change: "))
         self.req.goal_id = int(input("New id of goal to achieve: "))
-        self.req.items = input("New array of used items: ")
         self.req.begin_date = int(input("New starting date of plan (UNIX): "))
         self.req.end_date = int(input("New ending date of plan (UNIX): "))
         """ call the service as defined above """

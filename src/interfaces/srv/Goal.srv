@@ -1,4 +1,7 @@
 int32 goal_id
 string goal_desc
+string instructions
+string items
+string room_kind
 ---
 bool ack

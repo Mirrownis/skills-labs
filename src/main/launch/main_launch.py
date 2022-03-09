@@ -11,15 +11,9 @@ def generate_launch_description():
         Node(
             package='main',
             executable='log',
-            parameters=[
-                {'--disable-stdout-logs'}
-            ],
         ),
         Node(
             package='main',
             executable='plan',
-            parameters=[
-                {'--disable-stdout-logs'}
-            ],
         )
     ])

@@ -74,12 +74,12 @@ class NodePlanCore(Node):
         -- id: unique identifier of each individual goal
         -- goal: description of the task for users
         -- instructions: machine instructions for the planning node
-        -- items: the kind of items needed
+        -- items: the kind of items needed (FORMAT: thing1 thing2 thing3)
         -- room_kind: the kind of room to be reserved for the goal
         """
         sql_create_goals_table = """ CREATE TABLE IF NOT EXISTS goals (
                                      id integer PRIMARY KEY,
-                                     goal text NOT NULL,
+                                     goal_desc text NOT NULL,
                                      instructions text NOT NULL,
                                      items text,
                                      room_kind text NOT NULL
@@ -99,7 +99,7 @@ class NodePlanCore(Node):
         create table that holds the scheduled plans:
         -- id: unique identifier of the scheduled plan
         -- goal_id: number of the goal planned, non-unique in goal_planning
-        -- items: list of the needed items (FORMAT: thing1 thing2 thing3)
+        -- item_ids: list of the needed items (FORMAT: thing1 thing2 thing3)
         -- begin_date: starting date of the plan
         -- end_date: ending date of the plan
         """
@@ -148,7 +148,7 @@ class NodePlanCore(Node):
         """ insert new goal into table """
         if self.conn is not None:
             """ create goal in table """
-            self.db_create_goal(request.goal_desc)
+            self.db_create_goal([request.goal_desc, request.instructions, request.items, request.room_kind])
             """ inform user about action """
             self.msg.data = 'PlanCore: Created goal "%s"!' % request.goal_desc
             self.publisher_.publish(self.msg)
@@ -175,7 +175,7 @@ class NodePlanCore(Node):
         """ insert new goal description into table """
         if self.conn is not None:
             """ edit goal in table """
-            self.db_edit_goal([request.goal_desc, request.goal_id])
+            self.db_edit_goal([request.goal_desc, request.instructions, request.items, request.room_kind, request.goal_id])
             """ inform user about action """
             self.msg.data = 'PlanCore: Edited goal %d to "%s"!' % (request.goal_id, request.goal_desc)
             self.publisher_.publish(self.msg)
@@ -258,15 +258,17 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ insert new plan into table """
         if self.conn is not None:
+            """ look up needed items from the goal """
+            items = self.db_show_goal(request.goal_id)[0][3]
             """ reserve the needed items from the log core node """
-            self.node_comm.reserve_item(request.items, request.begin_date, request.end_date)
+            self.node_comm.reserve_item(items, request.begin_date, request.end_date)
             rclpy.spin_once(self.node_comm)
             reserve_result = self.node_comm.future.result()
             """ if the log core node can reserve the needed items, proceed """
             if reserve_result.reserved_ids is not None:
                 """ save the plan in the db to execute """
-                plan_id = self.db_create_plan([request.goal_id, str(reserve_result.reserved_ids),
-                                            request.begin_date, request.end_date])
+                plan_id = self.db_create_plan([request.goal_id, 1, str(reserve_result.reserved_ids),
+                                               request.begin_date, request.end_date])
                 """ inform user about action """
                 self.msg.data = 'PlanCore: Scheduled plan %d from %d to %d, using items %s!' \
                                 % (request.goal_id, request.begin_date, request.end_date,
@@ -275,7 +277,7 @@ class NodePlanCore(Node):
                 self.get_logger().info('Publishing: %s' % self.msg.data)
 
                 """ send plan to scheduler """
-                NodePlanScheduler.add_to_schedule(plan_id, request.begin_date)
+                NodePlanScheduler.add_to_schedule(NodePlanScheduler(), plan_id, request.begin_date)
 
                 """ send acknowledgement to indicate successful task """
                 response.ack = True
@@ -298,17 +300,10 @@ class NodePlanCore(Node):
         self.db_make_connection()
         """ change details of plan in table """
         if self.conn is not None:
-            self.db_edit_plan(request.plan_id, request.goal_id, request.items, request.begin_date, request.end_date)
-            """ inform user about action """
-            self.msg.data = 'PlanCore: Edited plan %d to goal %d from %d to %d using items %s!' \
-                            % (request.plan_id, request.goal_id, request.begin_date, request.end_date, request.items)
-            self.publisher_.publish(self.msg)
-            self.get_logger().info('Publishing: %s' % self.msg.data)
-
-            """ remove old plan from schedule """
-            NodePlanScheduler.remove_from_schedule(request.plan_id)
-            """ add plan with new begin date """
-            NodePlanScheduler.add_to_schedule(request.plan_id, request.begin_date)
+            """ delete old plan """
+            self.callback_delete_plan(request, response)
+            """ create new plan """
+            self.callback_create_plan(request, response)
 
             """ send acknowledgement to indicate successful task """
             response.ack = True
@@ -363,15 +358,9 @@ class NodePlanCore(Node):
         if self.conn is not None:
             """ read the description of the specified plan from the table """
             plan_data = self.db_show_plan(request.plan_id)[0]
-            plan_id = plan_data[0]
-            goal_id = plan_data[1]
-            room_id = plan_data[2]
-            item_ids = plan_data[3]
-            begin_date = plan_data[4]
-            end_date = plan_data[5]
             """ inform user about action and send requested details """
             self.msg.data = 'PlanCore: Plan %d reads "goal: %d, room: %d, item ids: %s, begin date: %d, end date: %d"!'\
-                            % (plan_id, goal_id, room_id, item_ids, begin_date, end_date)
+                            % (plan_data[0], plan_data[1], plan_data[2], plan_data[3], plan_data[4], plan_data[5])
             self.publisher_.publish(self.msg)
             self.get_logger().info('Publishing: %s' % self.msg.data)
             """ send acknowledgement to indicate successful task """
@@ -417,11 +406,11 @@ class NodePlanCore(Node):
         """
 
         """ build an INSERT INTO sql statement from the provided description """
-        sql = ''' INSERT INTO goals(goal) VALUES(?) '''
+        sql = ''' INSERT INTO goals(goal_desc, instructions, items, room_kind) VALUES(?, ?, ?, ?) '''
         """ make cursor to interact with the table """
         c = self.conn.cursor()
         """ execute the sql statement with the given description """
-        c.execute(sql, [goal])
+        c.execute(sql, goal)
         self.conn.commit()
 
     def db_edit_goal(self, goal):
@@ -432,8 +421,11 @@ class NodePlanCore(Node):
 
         """ build an UPDATE sql statement from the provided parameters """
         sql = ''' UPDATE goals
-                  SET goal = ?
-                  WHERE id = ?'''
+                  SET goal_desc = ?,
+                      instructions = ?,
+                      items = ?,
+                      room_kind = ?
+                      WHERE id = ?'''
         """ make cursor to interact with the table """
         c = self.conn.cursor()
         """ execute the sql statement with the given id and new goal description """
@@ -478,7 +470,7 @@ class NodePlanCore(Node):
         """
 
         """ build an INSERT INTO sql statement from the provided parameters """
-        sql = ''' INSERT INTO goal_planning(goal_id, items, begin_date, end_date) VALUES(?,?,?,?) '''
+        sql = ''' INSERT INTO goal_planning(goal_id, room_id, item_ids, begin_date, end_date) VALUES(?,?,?,?,?) '''
         """ make cursor to interact with the table """
         c = self.conn.cursor()
         """ execute the sql statement with the given plan """
@@ -547,8 +539,10 @@ class NodePlanCore(Node):
         :return: plan ids and begin dates from table
         """
 
+        """ create a database connection """
+        self.db_make_connection()
         """ build a SELECT FROM sql statement from the provided id """
-        sql = "SELECT plan_id, begin_date FROM goal_planning WHERE begin_date >= ?"
+        sql = "SELECT id, begin_date FROM goal_planning WHERE begin_date >= ?"
         """ make cursor to interact with the table """
         c = self.conn.cursor()
         """ execute the sql statement with the given time """

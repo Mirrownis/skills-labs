@@ -28,15 +28,15 @@ class NodePlanScheduler(Node):
         self.cli = None
         self.req = None
         self.future = None
+        self.msg = String()
 
         self.wall_time = 0
         self.ticker = threading.Event()
         self.scheduled_plans = []
+        self.publisher_ = self.create_publisher(String, 'user_information', 10)
 
         """ fetch existing plans """
         self.get_backlog()
-        """ start scheduling service """
-        self.scheduler_loop()
 
     def get_backlog(self):
         """
@@ -51,10 +51,15 @@ class NodePlanScheduler(Node):
         self.wall_time = int(time.time())
 
         """ get backlog from NodePlanCore """
-        self.scheduled_plans = NodePlanCore.db_get_backlog(self.wall_time)
+        self.scheduled_plans = NodePlanCore.db_get_backlog(NodePlanCore(), self.wall_time)
 
         """ sort schedule """
         self.sort_schedule()
+
+        """ inform user about action and send requested details """
+        self.msg.data = 'PlanScheduler: Scheduled backlog %s!' % str(self.scheduled_plans)
+        self.publisher_.publish(self.msg)
+        self.get_logger().info('Publishing: %s' % self.msg.data)
 
     def add_to_schedule(self, plan_id, begin_date):
         """
@@ -86,42 +91,6 @@ class NodePlanScheduler(Node):
         """
 
         self.scheduled_plans.sort(key=lambda tup: tup[1])
-
-    def scheduler_loop(self):
-        """
-        checks if current
-        """
-
-        while True:
-            self.wall_time = int(time.time())
-            next_plan = self.scheduled_plans[0]
-            if next_plan(1) >= self.wall_time:
-                """ execute plan """
-                self.executed_plan()
-                """ ... """
-            else:
-                """ wait a second """
-
-    def execute_plan(self):
-        """
-        Calls the planning core node to execute a plan.
-        """
-
-        """ create service client for Plan interface under the name 'edit_plan' """
-        self.cli = self.create_client(Plan, 'edit_plan')
-        """ wait for the server to be available """
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        """ define the request for the EditPlan interface """
-        self.req = Plan.Request()
-        """ take input for the parameters of the service interface """
-        self.req.plan_id = int(input("ID of plan to change: "))
-        self.req.goal_id = int(input("New id of goal to achieve: "))
-        self.req.items = input("New array of used items: ")
-        self.req.begin_time = int(input("New starting time of plan (UNIX): "))
-        self.req.end_time = int(input("New ending time of plan (UNIX): "))
-        """ call the service as defined above """
-        self.future = self.cli.call_async(self.req)
 
 
 def main():
