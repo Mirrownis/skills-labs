@@ -1,7 +1,6 @@
 int32 plan_id
 int32 goal_id
-string items
-int32 begin_time
-int32 end_time
+int32 begin_date
+int32 end_date
 ---
 bool ack

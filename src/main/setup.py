@@ -24,6 +24,7 @@ setup(
             'log = main.node_log_core:main',
             'plan = main.node_plan_core:main',
             'info = main.node_ui_output:main',
+            'scheduler = main.node_plan_scheduler:main'
         ],
     },
 )

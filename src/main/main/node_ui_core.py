@@ -42,6 +42,7 @@ class NodeUICore(Node):
                                         "Select a service: \n"
                                         "show_item\n"
                                         "show_goal\n"
+                                        "show_plan\n"
                                         "show_device_status\n"
                                         "create_item\n"
                                         "create_goal\n"
@@ -218,6 +219,9 @@ class NodeUICommunicator(Node):
         self.req = Goal.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_desc = input("Goal Description: ")
+        self.req.instructions = input("Machine Instructions: ")
+        self.req.items = input("Items: ")
+        self.req.room_kind = input("Kind of Room: ")
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
@@ -238,7 +242,10 @@ class NodeUICommunicator(Node):
         self.req = Goal.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to change: "))
-        self.req.goal_desc = input("New goal description: ")
+        self.req.goal_desc = input("Goal Description: ")
+        self.req.instructions = input("Machine Instructions: ")
+        self.req.items = input("Items: ")
+        self.req.room_kind = input("Kind of Room: ")
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
@@ -288,7 +295,7 @@ class NodeUICommunicator(Node):
         ---
         Asks for a new goal id, which holds the plan description.
         Asks for the used item kinds, which are then looked for in the logistics database.
-        Asks for the beginning and end time of the plan, so that the plan can be scheduled
+        Asks for the beginning and end date of the plan, so that the plan can be scheduled
         and the items can be reserved for the time.
         """
 
@@ -301,17 +308,16 @@ class NodeUICommunicator(Node):
         self.req = Plan.Request()
         """ take input for the parameters of the service interface """
         self.req.goal_id = int(input("ID of goal to achieve: "))
-        self.req.items = (input("Array of used items: "))
-        self.req.begin_time = int(input("Starting time of plan (UNIX): "))
-        self.req.end_time = int(input("Ending time of plan (UNIX): "))
+        self.req.begin_date = int(input("Starting date of plan (UNIX): "))
+        self.req.end_date = int(input("Ending date of plan (UNIX): "))
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
     def edit_plan(self):
         """
-        Calls the planning node to edit a plans info manually.
+        Calls the planning node to edit a plan's info manually.
         ---
-        Asks for a new goal id, the used item kinds, the beginning and end time of the plan.
+        Asks for a new goal id, the used item kinds, the beginning and end date of the plan.
         """
 
         """ create service client for Plan interface under the name 'edit_plan' """
@@ -324,9 +330,8 @@ class NodeUICommunicator(Node):
         """ take input for the parameters of the service interface """
         self.req.plan_id = int(input("ID of plan to change: "))
         self.req.goal_id = int(input("New id of goal to achieve: "))
-        self.req.items = input("New array of used items: ")
-        self.req.begin_time = int(input("New starting time of plan (UNIX): "))
-        self.req.end_time = int(input("New ending time of plan (UNIX): "))
+        self.req.begin_date = int(input("New starting date of plan (UNIX): "))
+        self.req.end_date = int(input("New ending date of plan (UNIX): "))
         """ call the service as defined above """
         self.future = self.cli.call_async(self.req)
 
@@ -343,6 +348,27 @@ class NodeUICommunicator(Node):
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         """ define the request for the DeletePlan interface """
+        self.req = Plan.Request()
+        """ take input for the parameters of the service interface """
+        self.req.plan_id = int(input("Plan ID: "))
+        """ call the service as defined above """
+        self.future = self.cli.call_async(self.req)
+
+    def show_plan(self):
+        """
+        Calls the planning node to show an existing plan.
+        ---
+        Asks for the id of the plan to be shown.
+        ---
+        Note: The item data will be sent to the user info node.
+        """
+
+        """ create service client for Plan interface under the name 'show_plan' """
+        self.cli = self.create_client(Plan, 'show_plan')
+        """ wait for the server to be available """
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        """ define the request for the Plan interface """
         self.req = Plan.Request()
         """ take input for the parameters of the service interface """
         self.req.plan_id = int(input("Plan ID: "))
