@@ -1,0 +1,131 @@
+\section{State of the Art}
+
+In Vorbereitung auf die Konzeptionierung wurden aktuelle wissenschaftliche Arbeiten untersucht, um ähnliche Ideen zusammenzutragen und auf diesen aufzubauen. Da in der Automatisierung optimale Strategien von den lokalen Gegebenheiten abhängen und es keine allgemein gültigen Lösungen für alle Arbeitsbereiche gibt, werden zunächst verschiedene Lösungsansätze für Teilprobleme der Aufgabe betrachtet. Aufbauend auf diesen werden dann im weiteren Verlauf dieser Arbeit Ansatzpunkte gewählt, die eine Lösung für die Forschungsfrage ermöglichen.
+
+Hierfür wurden die beiden Themenkomplexe der Schwarmrobotik und Lagerlogistik besonders betrachtet, da eine Automatisierung in Skills Labs durch eine Gruppe von autonomen mobilen Robotern besonders auf diesen aufbaut. Die Schwarmrobotik beschäftigt sich mit der Interaktion zwischen und der Organisation von einer größeren Menge Robotern in einer gemeinsamen Umgebung. Die Lagerlogistik dagegen beschreibt die Organisation einer möglichst effizienten Lagerverwaltung, welche in den letzten Jahren durch das Aufkommen von mobilen Roboterplattformen stark verändert wurde.
+
+Zudem wurden mehrere Themenkomplexe betrachtet, die in Teilaufgaben der Automatisierung von Skills Labs mit einfließen. Dazu zählen insbesondere die Krankenhausrobotik, also die Verwendung von robotischer Unterstützung in Krankenhausabläufen, sowie die Robotik in Umgebungen, die gemeinsam mit Menschen genutzt werden.
+
+Das Ziel der Schwarmrobotik ist, dass sich verschiedene Roboter in einer gemeinsamen Umgebung nicht gegenseitig behindern und bestenfalls sogar zusammenarbeiten, um gemeinsame Ziele zu erreichen. Ein zentraler Forschungsschwerpunkt ist dabei derzeit, einen Grat zwischen Performanz, Robustheit in einer komplexen Umgebung und Skalierbarkeit der verwendeten Roboter-Anzahl zu schlagen. Die sinnvolle Steuerung eines Roboters anhand von Sensordaten in Echtzeit ist eine Aufgabe, die eine nicht vernachlässigbare Menge Rechenaufwand erfordert. Dementsprechend ist ein System, das eine größere Anzahl von Robotern gleichzeitig steuert, aufwendig zu implementieren und Gegenstand der aktuellen Forschung.
+
+Die Arbeit von Inoue et al. \cite{meanField} beispielsweise versucht dieses Problem zu lösen, indem einzelne Roboter als Partikel in einem Mean-Field Game betrachtet werden. Das bedeutet, dass der explizite Zustand einzelner Roboter nicht vom Kontrollsystem erfragt und ausgewertet wird, sondern anhand der physischen Position geschätzt wird. So ein Ansatz ermöglicht es, große Mengen Roboter anzusteuern, ohne eine lineare Skalierung des Rechenaufwands zu erzeugen. Dies geht zulasten der Qualität der einzelnen Steuerungsanweisungen, daher war der Forschungsschwerpunkt der Arbeit, den Fehler zwischen der Schätzung und dem tatsächlichen Zustand der eingesetzten Roboter zu minimieren. Ein solches System setzt voraus, dass es eine große Anzahl von Robotern gleicher Bauart gibt, über die die zentrale Steuerung mitteln kann.
+
+Einen Ansatz, diese Beschränkung zu umgehen, liefert die Arbeit von Olcay et al. \cite{collectiveNav}. Anstatt eine Steuerung vorzugeben, teilen die einzelnen Roboter mit der zentralen Kontrolleinheit ihre Sensordaten, welche diese zu einem gemeinsamen Weltmodell zusammenführt und an alle Roboter zurück gibt. Dadurch soll den einzelnen Robotern ermöglicht werden, bessere Entscheidungen in der eigenen Navigation zu treffen. So kann auch eine kollektive Bewegungsplanung ermöglicht werden, in der sich die Roboter nicht im Weg stehen, obwohl die Roboter völlig autonom handeln. Da dies nicht voraussetzt, dass die einzelnen Agenten identisch sind, sondern nur ein gemeinsames Weltmodell verstehen, kann eine Vielzahl verschiedener Modelle verwendet werden.
+
+Diese beiden Ansätze setzen voraus, dass alle Roboter die gesamte Einsatzzeit mit einem zentralen Server verbunden sind. In der Praxis kann dies aber nicht immer gewährleistet werden. Andere Forschungsgruppen setzen daher auf dezentrale Steuerungsmodelle. Das hat den Vorteil, dass das System robust gegenüber Kommunikationsausfällen ist und weniger Datenaustausch erfolgen muss.
+
+Im Ansatz von Fan et al. \cite{mlTrain} wird daher versucht, einzelnen Robotern ein kooperatives Verhalten beizubringen. Anstatt während der Laufzeit mittels fortlaufender Kommunikation Entscheidungen zu treffen, werden die Roboter mittels maschinellen Lernens für entsprechende Situationen trainiert. Dies muss nicht in einer physischen Umgebung passieren, sondern kann in einer Simulation vor dem Einsatz stattfinden. In dieser lernen die Roboter, einander möglichst effizient auszuweichen und Kollisionen zu vermeiden, um dies dann auch zur Laufzeit zu tun. Dadurch kann die zentrale Steuerung sich darauf beschränken, grobe Anweisungen wie Zielpunkte vorzugeben, während das explizite Verhalten in verschiedenen Situationen den Robotern selbst überlassen wird. Die Arbeit zeigt, dass solch ein Ansatz sowohl robust gegenüber Änderungen in der physischen Form des Roboters ist, wie sie im Transport von Möbeln auftreten würden, als auch gegenüber der Anwesenheit von Menschen in derselben Umgebung. Der Nachteil hiervon ist aber, dass das maschinelle Lernen der Steuerung von Robotern aufwendig ist und sich bei drastischen Änderungen der Umgebung wiederholt.
+
+Die Arbeit von Reily et al. \cite{silentSwarm} setzt statt auf ein vorheriges Trainieren der Roboter daher darauf, dass jeder einzelne Roboter nicht nur den eigenen Pfad planen kann, sondern genauso den anderer ihm bekannter Roboter. Hier werden mögliche Kollisionen vermieden, indem jeder Roboter die Position anderer Roboter in seinem Weltmodell bestimmt und anhand deren bekannten Zielkoordinaten einen idealen Pfad berechnet. 
+
+Dabei wird auf die Spieltheorie zurückgegriffen, um ein insgesamt besseres Ergebnis zu erzielen, indem jeder Roboter sich kooperativ verhält. Dabei werden neben dem Abstand des Roboters von seinem Ziel auch der zu anderen Plattformen und Hindernissen als zu berücksichtigende Parameter der Wegplanung miteinbezogen. Dadurch, dass jeder Roboter nicht nur versucht, einen optimalen Weg für sich selbst zu finden, sondern auch Vorhersagen über das Verhalten anderer Roboter macht, kann er einen Plan entwickeln, der für alle Roboter das optimale Ergebnis erzielt. Auf diese Art soll ein gemeinsames koordiniertes Vorgehen entstehen, ohne dass die Roboter miteinander kommunizieren oder eine zentrale Einheit die Navigation steuert.
+
+Dies setzt voraus, dass jeder Roboter in der Lage ist, mehrere Wegplanungen gleichzeitig zu berechnen. Auch muss jeder Roboter jeden anderen im System erkennen und dessen Wegziel wissen können. Die erste Voraussetzung kann in modernen Robotern als gegeben angesehen werden, da die Wegplanung bei angemessener Optimierung nur einen Bruchteil der benötigten Rechenleistung darstellt. Um die zweite Voraussetzung zu erfüllen, müssen Roboter entweder untereinander kommunizieren können oder über ein zentrales System ihre Position mitteilen.
+
+Die Lagerlogistik setzt bei der Automatisierung in der Regel auf einen makroskopischen Ansatz. Einer der zentralen Begriffe hier ist Robotic Mobile Fulfillment System, als RMFS abgekürzt. Er bezeichnet Systeme, bei denen Roboter den Großteil der Vorgänge in der Logistik übernehmen, anstatt diese händisch durchführen zu lassen. Die Roboter werden dabei nicht nur als Ersatz für menschliche Arbeiter verwendet, sondern sind zentraler Teil des Warenhauses.
+
+Ein gutes Beispiel hierfür ist in der Arbeit von Keung et al. \cite{cloudFullfillment} zu finden. Die Entwicklung von Internet of Things-Geräten erlaubt es, Möbel und vormals statische Gegenstände in ein cyber-physikalisches System zu integrieren. Mittels eines zentralen Cloudservers können diese IoT-Geräte, Roboterplattformen und die Kommunikation zwischen diesen abgewickelt werden. Diese Einbindung von cyber-physikalischem System und Robotern verspricht eine Effizienzsteigerung der Abläufe, die eine reine Verwendung von nur einer der beiden Technologien nicht erreichen könnte. In dieser Arbeit wird dies über eine mehrschichtige Regelordnung erreicht, welche Aufgaben in übergeordneten Zielen, für die mehrere Systeme zusammenarbeiten müssen, sowie kleinen Aufgaben, welche von einem einzelnen System des RMFS bewältigt werden können, einordnet.
+
+An einer solchen Aufgabenplanung hat auch das Team Bolu et al. gearbeitet \cite{adaptivePlanning}. Da RMFS sehr dynamische Umgebungen sind, die sich ständig verändern, wurde versucht, ein zentrales Aufgaben-Management zu implementieren. Damit sollen die begrenzten Ressourcen möglichst effizient genutzt werden. Das Management-System nimmt daher Daten wie den Standort von Robotern, anstehende Aufgaben und mögliche Zusammenarbeitsmöglichkeiten von Systemen auf. Aus diesen Daten erstellt es dann adaptiv Aufgaben für die einzelnen Geräte, welche ansonsten ohne Rücksicht auf die jeweilige aktuelle Situation verteilt werden würden.
+
+Ein Ansatz zur Anpassung von Automatisierungsalgorithmen an sich ändernde Gegebenheiten ist auch in der Arbeit von Xiang et al. \cite{BIMExtension} zu finden. Die Forscher schlagen einen hybriden Ansatz vor, bei dem Algorithmen und die logistischen Gegebenheiten in Tandem optimiert werden, um besser aufeinander abgestimmt zu werden. Der vorgeschlagene Wegplanungsalgorithmus soll durch Einsatz von künstlicher Intelligenz auf Ausnahmesituationen reagieren können, indem er sich dynamisch an sich ändernde Umstände anpasst. Dies kann im Einsatz in Skills Lab auch abseits von solchen Situationen von unermesslichem Wert sein, da sich Simulationen im Aufbau und den Anforderungen stark unterscheiden können,weshalb jede Wegplanung robust gegenüber Änderungen der Arbeitsumgebung sein muss.
+
+Andere Forschungsgruppen beschäftigen sich statt mit der Aufgabenverteilung in der Logistik mit der effizienten Pfadplanung von autonomen Roboterfahrzeugen, Automated Guided Vehicle oder AGV genannt. Die Arbeit von Zhang et al. \cite{routeAGV} beispielsweise beschäftigt sich mit der Vermeidung von Kollisionen in den Abläufen. Da automatisierte Warenhäuser möglichst wenige Flächen für die Navigation freihalten möchten, ohne die Effizienz der eingesetzten AGVs zu verringern, beschäftigte sich das Team mit der Wegplanung. Anhand der Zeitpläne der verschiedenen Arbeitsstationen im Lager werden die Wege so geplant, dass die Wartezeiten von AGVs an diesen minimiert werden. In der vorgestellten Gitter-basierten Wegplanung implementiert das Forschungsteam drei verschiedene Strategien, um die jeweiligen Planungskollisionen zu vermeiden.
+
+Einen anderen Ansatz verfolgen Yang et al. \cite{2DPlan}. Sie implementierten die Wegplanung, indem diese als Botenproblem betrachtet wird. Die einzelnen Aufgaben im Lager werden als anzufahrende Stationen in einem statischen Gitter-Modell betrachtet. Ausgehend von einer ersten Aufgabe werden nach und nach mehr anzufahrende Stationen hinzugefügt und eine optimale Strategie für die Reihenfolge der Aufgabenerledigung gefunden. Dies erhöht die Performanz individueller AGVs gegenüber anderen Planungsarten, da optimale Pfade schneller gefunden werden.
+
+Zur Implementierung einer solchen Strategie ist es nötig, eine Karte der Umgebung zu besitzen, in der Aufgaben wie der Ort zu transportierender Möbel und anzufahrender Ablagepunkte lokalisiert werden können. Dies ist jedoch für nahezu alle Navigationsansätze nötig, sodass es keine gesonderte Herausforderung darstellt. Der Vorteil dieses Ansatzes ist besonders bei komplexen Wegplanungen spürbar, bei denen die Berechnung signifikante Ressourcen benötigt. Dies kann im zu entwerfenden System dann auftreten, wenn Möbel aus verschiedenen Räumen zusammengetragen werden müssen oder weniger Roboter als Möbel zur Verfügung stehen, sodass die Wegfindung optimiert werden muss.
+
+Ein wichtiger Unterschied zwischen dem Einsatz von Robotern zum Transport von Möbeln in einem Skills Lab und standardisierten Objekten in einem darauf ausgelegten Warenhaus ist die verschiedene Handhabung der Ladung. Während in einem Warenhaus die Objekte in leicht zu erreichenden Regalen gelagert sind, müssen im Skills Lab voraussichtlich sehr verschieden geformte Gegenstände vom Boden aufgehoben werden.
+
+In der Arbeit von De La Puente et al. \cite{assistRobot} wird dieses Problem mithilfe von bereits bestehenden Robotern gelöst. Der hier vorgestellte Algorithmus ermöglicht diesen, beliebige Objekte vom Boden aufzuheben. Die Forschung baut dabei auf bereits bestehenden Projekten in Laborszenarien auf und erweitert diese auf Realbedingungen durch Einbindung aller dazu benötigten Komponenten. Diese umfassen in den Experimenten eine mobile Plattform, eine Sensoreinheit auf einem beweglichen Kopf und einen Arm mit Greifer.
+
+Der Schwerpunkt der Arbeit liegt dabei neben der Performanz auf der Robustheit des Systems. Der Forschungserfolg liegt darin, dass der Roboter die Aufgabe in unübersichtlichen und dynamischen Umgebungen mit Menschen erfüllen kann, wie es auch in einem Skills Lab der Fall ist. Der Roboter kann dabei selbstständig anhand der Position und Größe  der Objekte feststellen, ob sie von ihm aufgehoben werden können. Da die Objektauswahl auch auf andere Weise erfolget, beispielsweise durch eindeutige Positionsangaben im 2D-Raum, und mit wenig Aufwand automatisiert werden kann, ist dies auch für einen Einsatz im Skills Lab geeignet, um ungewöhnlich geformte Möbel und Simulatoren zu bewegen.
+
+Beim Transport von Simulatoren ist unter Umständen eine besondere Umsicht geboten, da diese gegenüber Bewegung empfindlich sein oder einen ungewöhnlichen Schwerpunkt haben können. Dieses Problem wird in der Arbeit von Jung et al. \cite{wheelchairPlan} gelöst, welche sich mit der Steuerung von autonomen Rollstühlen beschäftigt. Während die übergeordnete Wegplanung auf herkömmliche Art mittels Wegpunkten erfolgt, ist das Handeln in unvorhergesehenen Situationen völlig autonom implementiert. Die in dieser Arbeit vorgestellte Lösung nimmt dabei nicht nur eine Kollisionsvermeidung vor, sondern adressiert auch die Beschränkungen, die durch einen Menschen im Rollstuhl entstehen. Darunter fallen Beschleunigungsgrenzen, das Reagieren auf Bewegungen des Patienten und allgemeine Praktiken für die sichere Bewegung in einem Krankenhaus. Dies lässt sich mit angepassten Beschränkungen gleichermaßen auf den Transport von sensiblen Geräten in einem Skills Lab übertragen.
+
+
+\section{Interviews}
+
+Zusätzlich zu der eigenen Recherche von wissenschaftlichen Arbeiten wurden Interviews mit Experten durchgeführt, um ihre Perspektiven auf Skills Labs und Automation zu erhalten. An der Universität zu Lübeck wurden die Fachleitung der Ergotherapie, Prof. Dr. Katharina Röse, den Studiengangsleitungen der Studiengänge Physiotherapie, Prof. Dr. Kerstin Lüdtke, und Pflege, Prof. Dr. rer. cur. Katrin Balzer, sowie der Direktor des Instituts für Allgemeinmedizin, Prof. Dr. med. Jost Steinhäuser, interviewt. Dazu wurden Gespräche mit Tim Herzig von der VIFSG Bielefeld und Petra Knigge vom SkiLah Hannover geführt.
+
+Die erste Priorität war es, einen Überblick über den momentanen Betrieb von Skills Labs und anderen Ausbildungsräumen zu erhalten. Es stellte sich heraus, dass in den Lehreinrichtungen an der Universität Lübeck kaum Automatisierung zum Einsatz kommt. Im Interview mit Frau Lüdtke stellte sich auch heraus, dass statt auf variable Raumaufteilungen auf feste Aufbauten gesetzt wird. Dementsprechend verfügen die verschiedenen Life Science-Disziplinen über getrennte Ausbildungsräume, wodurch Redundanzen in den benötigten Räumlichkeiten entstehen. Dies wurde auch in den Interviews mit Frau Röse, Frau Balzer und Herrn Steinhäuser bestätigt.
+
+Die verwendeten Möbel verfügen in allen betrachteten Skills Labs über Rollen, um sie bei Bedarf zu bewegen, verbleiben aber in der Regel in einem festgelegten Aufbau. Dies hat den Vorteil, dass für die Ausbildenden kein zusätzlicher Aufwand in der Vorbereitung der Räume entsteht und keinerlei automatisierten Kontrollsysteme benötigt werden. Auf der anderen Seite bedeutet dies aber auch, dass die einzelnen Räume nur einen kleinen Umfang von Simulationen unterstützen. Durch die Verwendung von solchermaßen fest eingerichteten Räumen sind Simulationen zudem nur begrenzt in der Lage, einer Praxisumgebung nahe zu kommen. Eine Ausnahme bildet hier die medizinische Ausbildung, welche darauf setzt, der Umgebung eines Krankenhausalltags möglichst nahe zu kommen.
+
+Der Umfang der verschiedenen, in diesen Skills Labs angebotenen Lehrangebote unterscheidet sich stark zwischen den unterschiedlichen Einrichtungen. Während in den Räumen des Studiengangs Physiotherapie sehr homogene Kurse stattfinden, welche einem ähnlichen Ablauf folgen, müssen die Räumlichkeiten des SkiLah Hannover gleichzeitig eine große Anzahl unterschiedlich ausgerichteter Simulationen unterstützen. Zwischen diesen Extremen liegen die anderen Skills Labs, wie das des Studiengangs Ergotherapie Lübeck, welche nur eine kleine Anzahl verschiedener Simulationsaufbauten in einem Zeitraum benötigen, diese jedoch stark unterschiedliche Anforderungen haben.
+
+Die Lagerung von benötigten Materialien wird in den Ausbildungsräumen der verschiedenen Institute unterschiedlich gehandhabt. Während die Physiologie Materialien in eigenen dafür bereitgestellten Räumen aufbewahrt, greift das SkiLah Hannover auf Schränke in den einzelnen Lehrräumen zurück. Jedoch benötigt nicht jede Disziplin eine große Anzahl Materialien. Die Lehre in der Ergotherapie benötigt beispielsweise keine nennenswerten Vorräte, weshalb auf eine dedizierte Materiallagerung in den Räumlichkeiten verzichtet werden kann.
+
+In den Gesprächen wurden neben der aktuellen Situation auch Anregungen und Konzeptvorschläge der Experten für interdisziplinäre Skills Labs erfragt. So gab Herr Herzig zu bedenken, dass neben den Auszubildenden und Lehrenden auch Simulationspersonen in zukünftigen Konzepten berücksichtigt werden sollten, da diese vermehrt in Simulationen eingesetzt werden. Dies bringt die Herausforderung mit sich, dass diese gegebenenfalls nicht wie Lehrende mit den Abläufen des jeweiligen automatisierten Skills Labs vertraut sind, aber trotzdem an der Durchführung von Simulationen mitwirken. Dementsprechend muss ein System so konzipiert sein, dass es auch für ungeschultes Personal einen Mehrwert bringt.
+
+Zudem wurde angemerkt, dass die Integration von hybriden Lehrmodellen eine immer größere Bedeutung gewinnt und auch in Skills Labs Anwendung findet. Dementsprechend kann die Einbindung von Video-Aufnahmemöglichkeiten in ein automatisiertes System einen merklichen Mehrwert für die Lehre schaffen, indem beispielsweise die Gabe von Feedback erheblich erleichtert wird. Da die Verwendung von anderen cyber-physikalischen Systemen wie motorisiert höhenverstellbaren Liegen, digitaler Patientendokumentation, Sensoreinrichtungen zur Patientenüberwachung oder ambienten Multimedia-Anlagen in der Praxis zunehmend an Bedeutung gewinnt, wurde eine Unterstützung solcher Systeme nahegelegt.
+
+Um die Realitätstreue von Simulationen verbessern zu können, wurde auch als essenziell genannt, dass ein automatisiertes Skills Lab neben den für fast alle Disziplinen zentralen Möbeln, wie Liegen und Stühlen, auch die Unterstützung von dekorativen Objekten gewährleistet. Um dies zu tun, muss ein System in der Lage sein, komplexe Aufbauten aufstellen zu können und gegebenenfalls verschiedenartige Roboter zu steuern, um eine breite Palette an Objekten bewegen zu können.
+
+Im Gespräch mit Herrn Steinhäuser ergab sich die Möglichkeit, zu erfahren, welche Rahmenbedingungen an eine neu konzipierte Einrichtung in der zukünftigen medizinischen Lehre gestellt werden könnten. Ein Schwerpunkt hierbei soll die Unterstützung von Simulationsprüfungen anhand von Übungspuppen und Schauspielern sein. Für diese muss ein Skills Lab über eine größere Anzahl von Simulationsräumen von etwa 8 bis 10 Quadratmetern Fläche sowie mehrere größere Räume von etwa 20 bis 25 Quadratmetern Fläche verfügen. Die Anzahl der benötigten Räume hängt dabei maßgeblich davon ab, wie verschieden diese eingesetzt werden können. Es wird auch davon ausgegangen, dass interdisziplinäre Ausbildung eine zunehmend größere Rolle in der Lehre spielen wird. Daher wird der verschiedenartigen Nutzbarkeit von Räumen eine besondere Bedeutung zugeordnet.
+
+In allen Gesprächen wurde deutlich, dass für die Akzeptanz eines Automatisierungskonzepts die Robustheit und Nutzerfreundlichkeit eine zentrale Rolle spielen. Eine verlässliche aber weniger umfangreiche Automatisierung bietet der Meinung der befragten Experten nach einen größeren Mehrwert für die Lehre als ein stärkeres, aber weniger verlässlicheres System. Zudem würde ein schwer zu bedienendes System durch den zusätzlichen Ausbildungsaufwand die Arbeitserleichterung stark vermindern.
+
+
+\section{Anforderungen}
+
+Vor einer Konzeptionierung müssen die Anforderungen an das System definiert werden. Dies basiert sowohl auf der Forschungsfrage selbst als auch auf den in diesem Kapitel zusammengetragenen Recherchen. Sie werden hier in funktionelle und nicht-funktionelle Anforderungen eingeteilt. Zum Zweck der sprachlichen Einfachheit wird die Gesamtlösung im Folgenden als 'System' betitelt, während Roboter, mobile Plattformen und cyber-physikalische Systeme als 'Geräte' bezeichnet werden.
+
+\subsection{Funktionelle Anforderungen}
+
+\subsubsection{Steuerung verbundener Geräte ermöglichen}
+
+Um die Abläufe im Skills Lab zu unterstützen, muss das System es in erster Linie ermöglichen, mit ihm verbundene Geräte anzusteuern. Dies umfasst das Senden von Anweisungen und Empfangen von Statusmeldungen. Dafür muss das System über Schnittstellen verfügen, über welche diese Geräte mit dem System kommunizieren können.
+
+
+\subsubsection{Eingabe von Nutzeranweisungen}
+
+Die Nutzer müssen in der Lage sein, dem System Anweisungen zu erteilen, um die Nutzung von Funktionen anzufordern. Dafür muss eine Benutzerschnittstelle zur Verfügung gestellt werden.
+
+
+\subsubsection{Status darstellen}
+
+Das System muss in der Lage sein, den Zustand der verbundenen Geräte einem Nutzer darzustellen, damit es diesem möglich ist, die verbundenen Geräte im normalen Betrieb zu überprüfen. Dazu zählt, soweit technisch möglich, die Abfrage der Position von mobilen Plattformen sowie die aktuell ausgeführte Arbeit der Geräte.
+
+
+\subsubsection{Autonomer Betrieb zur Laufzeit}
+
+Der normale Zustand des Systems soll der autonome Betrieb sein. Während der Laufzeit muss das System daher selbstständig agieren und Entscheidungen anhand der Nutzereingaben treffen können, ohne dass ein Mensch dies begleiten muss. Nutzereingaben in das System sollten bei störungsfreiem Betrieb daher nur zu Wartungszwecken, zur Änderung der Betriebsvorgaben oder der Eingabe neuer Befehle nötig sein.
+
+
+\subsubsection{Szenarien und Voreinstellungen erstellen}
+
+Um einen autonomen Betrieb zu ermöglichen, muss ein Nutzer neben sofort ausführbaren Aufgaben auch in der Lage sein, Anweisungen im Voraus zu planen. Dafür muss die Benutzerschnittstelle über ein Planungssystem verfügen, um einmalige und sich wiederholende Zeitpläne für diese zu erstellen. Um es zu ermöglichen, auf zuvor erstellte Simulationen zurückzugreifen, soll diese zudem über die Funktion verfügen, Anweisungen in Szenarien zu bündeln und im System zu hinterlegen.
+
+	
+\subsubsection{Robustheit gegenüber Planänderungen}
+
+Ein Nutzer muss in der Lage sein, eingegebene Anweisungen zur Laufzeit zurückzunehmen oder zu ändern. Das System muss dafür geplante Aufgaben bearbeiten oder, wo technisch möglich, deren Ausführung abbrechen können.
+
+
+\subsubsection{Multi-User Konzept}
+
+Da das System von den Lehrenden verwendet werden soll, muss es über ein Multi-User Konzept verfügen, welches den gleichzeitigen Zugriff von mehreren Nutzern ermöglicht. Diese sollen auch in der Lage sein, vorher erstellte Szenarien aufzurufen und zu bearbeiten.
+
+
+\subsection{Nicht-Funktionelle Anforderungen}
+
+\subsubsection{Zugängliche Semantik}
+
+Die Bedienungssemantik des Systems muss für Nutzer ohne technischen Hintergrund erlernbar sein. Das System soll so konzipiert sein, dass ein Nutzer nach einer Einweisung gegebenenfalls mithilfe einer Anleitung in der Lage ist, Anweisungen über die entsprechende Schnittstelle einzugeben.
+
+
+\subsubsection{Skalier- und Erweiterbarkeit}
+
+Damit das System für einen langfristigen Betrieb geeignet ist, muss es so konzipiert werden, dass es, soweit technisch möglich, keine Engpässe enthält, die die Integration von neuen Geräten verhindert. Auch soll es für die Unterstützung von einer möglichst großen Zahl verschiedenartiger Simulationen so aufgebaut sein, dass die Erweiterung um neue Geräte oder Komponenten nach der Implementierung möglich ist. Das System soll auch so konzipiert werden, dass solche Erweiterungen mit möglichst geringem Aufwand erfolgen können.
+
+
+\subsubsection{Nutzerzugang über gesicherte Schnittstelle}
+
+Die Schnittstellen zum System sollen so konzipiert werden, dass unbefugter Zugang, soweit technisch möglich, verhindert wird. Sowohl der Zugriff auf Geräte als auch die vom Nutzer verwendeten Daten sollen dabei vor unberechtigtem Zugriff geschützt werden.
+
+
+\subsubsection{Sicherer Betrieb}
+
+Durch die Tätigkeiten des Systems darf es nicht zur Gefährdung von Menschen oder einer Beeinträchtigung des Lehrbetriebs kommen. Daher müssen das System und die verbundenen Geräte, wo erforderlich und technisch möglich, über geeignete Sicherheitsmechanismen verfügen, um dies zu verhindern.

@@ -1,0 +1,289 @@
+\renewcommand{\partpagestyle}{empty}
+
+\setkomafont{sectioning}{\sffamily}
+\newcommand{\ANF}[1]{"`#1"'}
+
+\renewcommand{\paragraph}{\minisec}
+
+%%% ------------------------------
+%%% font related stuff
+%%% ------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{europs}  
+\newcommand{\euro}{\EURofc{} }    % provides \euro
+
+\newcommand{\abk}{ganzlangesWort}
+
+% font selection
+\usepackage{newtxtext,newtxmath}
+
+\usepackage{xspace}
+
+% --------------------
+% list settings
+\usepackage{paralist} % settings for compactitemize, compactenum
+\setlength{\pltopsep}{1ex} % skip vor erstem Aufzaehlungspunkt
+\setlength{\plitemsep}{0ex} % skip zwischen den Punkten
+
+\usepackage{cancel}
+
+%%% --------------------------------------------------
+%%% Satzspiegel
+%%% --------------------------------------------------
+%\paperwidth 15.2cm 
+%\paperheight 23.4cm
+%\areaset{11.6cm}{19.5cm}
+%%\typearea
+
+% ------------------------------
+% placement options for floats
+% ------------------------------
+\renewcommand{\floatpagefraction}{.8} % Minimaler Anteil einer Seite, 
+                                      % der bei einer p-Plazierung eines 
+                                      % oder mehrerer Gleitobjekte erreicht
+                                      % werden muss. Voreinstellung: 0.5
+\renewcommand{\textfraction}{.15}     % normalerweise 1 - \floatpagefraction
+\renewcommand{\topfraction}{.85}
+\renewcommand{\bottomfraction}{.7}
+\setcounter{topnumber}{9}             % maximale Anzahl floats pro Seitenkopf
+\setcounter{bottomnumber}{9}          % maximale Anzahl floats pro Seitenfuss
+\setcounter{totalnumber}{20}
+
+
+%%% -----------------------------------------------------
+%%% Fussnoteneinstellungen
+%%% -----------------------------------------------------
+\deffootnote[1em]{1em}{1em}{\textsuperscript{\thefootnotemark}}
+% weg mit dem doofen Einzug bei mehrzeiligen Fussnoten
+\renewcommand{\footnoterule}{\vspace*{4pt}\noindent\rule{0.4\textwidth}{0.4pt}\vspace*{4pt}}
+
+
+%%% --------------------------------------------------
+%%% eingebundene Pakete
+%%% --------------------------------------------------
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[ngerman]{babel}
+
+%\usepackage{makeidx}
+\usepackage{amssymb}
+%\usepackage{amsbsy}
+\usepackage{amsmath}
+%\usepackage{ntheorem}
+\usepackage{array}
+\renewcommand{\[}{\begin{equation}}
+\renewcommand{\]}{\end{equation}}
+
+% ----- listings settings
+\usepackage{color}
+\usepackage[final]{listings}
+\lstloadlanguages{Perl,XML}
+\definecolor{CodeColor}{gray}{0.1}
+%\newrgbcolor{hellgrau}{0.95 0.95 0.95}
+%\newrgbcolor{orange}{0.87 0.42 0.06}
+%\newrgbcolor{gelb}{1 0.94 0.75}
+%\newrgbcolor{hellblau}{0.55 0.73 0.89}
+\lstset{%language=XML, 
+        basicstyle=\ttfamily\scriptsize,
+        %numbers=left,
+        numbersep=2ex,numberstyle=\tiny,
+%        % frame settings --------------------
+%        frame=single,
+%        backgroundcolor=\color{hellhellblau},
+%        framerule=0mm,
+%        % ---------------- end frame settings
+        xleftmargin=4ex,
+        xrightmargin=2ex,
+        aboveskip=2\medskipamount,
+        belowskip=2ex,
+        breaklines=true,
+        %frameround=tttt,
+        %framesep=4pt,
+        %fillcolor=\color{hellgrau},
+        %rulecolor=\color{hellgrau},
+        }
+\newcommand{\cd}[1]{\lstinline[basicstyle=\ttfamily\small]{#1}}
+
+
+
+%%% --------------------
+%%% 
+%%% --------------------
+\usepackage{calc}          % From LaTeX distribution
+\usepackage{graphicx}      % From LaTeX distribution
+
+
+
+%% --------------------------------------------------
+%% biblatex mit biber
+%% --------------------------------------------------
+\usepackage[babel,autostyle]{csquotes}
+\usepackage[%
+    backend=biber,
+    style=numeric,
+		dashed=false,
+    sortlocale=de_DE,
+    natbib=true,
+    url=false, 
+		isbn=false,
+    %doi=true,
+    eprint=false,
+		bibencoding=utf8,
+		safeinputenc,
+		maxbibnames=99,
+		maxcitenames=2,
+		%indexing=cite
+		refsegment=chapter, 
+		%refsection=chapter,
+		defernumbers=true,
+		parentracker=true,
+    backref=true,
+    backrefstyle=three
+]{biblatex}
+\DeclareBibliographyCategory{Buch} 
+%%\DeclareBibliographyCategory{sonstigeQuellen}
+\addbibresource{Literatur_Abschlussarbeit.bib}
+\renewcommand{\bibfont}{\small}
+\renewcommand*{\nameyeardelim}{\addspace} 
+\setlength{\bibhang}{0em}
+\setlength{\bibitemsep}{1ex}
+\defbibheading{bibliography}[\bibname]{%
+\section*{#1}%
+\markboth{#1}{#1}}
+%%\DeclareNameFormat{sortname}{%
+      %%\usebibmacro{name:last-first}{#1}{#3}{#5}{#7}%
+      %%\usebibmacro{name:delim}}
+
+%% citeB Buchquelle
+%\newcommand*{\citeB}[1]{\addtocategory{Buch}{#1}\citet{#1}}
+%\newcommand*{\nociteB}[1]{\addtocategory{Buch}{#1}\nocite{#1}}
+\newcommand*{\citeB}[1]{\citet{#1}}
+\newcommand*{\nociteB}[1]{\nocite{#1}}
+%%
+% citeQ sonstige Quelle (z.B. für Grafiken)
+\newcommand*{\citeQ}[2][]{\addtocategory{sonstigeQuellen}{#2}\citet[#1]{#2}}
+
+% --------------------------------------------------
+% Zeilenumbrucheinstellungen
+% --------------------------------------------------
+
+% Strafpunkte: Je höher Wert, desto unwahrscheinlicher
+%\linepenalty=10
+%\clubpenalty=150 % Zeile allein in letztem Absatz
+%\widowpenalty=150 % Zeile allein in erstem Absatz
+\linepenalty=10
+\clubpenalty=1000 % Zeile allein in letztem Absatz
+\widowpenalty=1000 % Zeile allein in erstem Absatz
+%\emergencystretch=0.015\hsize
+%\interlinepenalty=100000
+
+% --------------------------------------------------
+% Index und Co.
+% --------------------------------------------------
+%\usepackage{index}
+\usepackage{makeidx}
+\renewcommand{\indexname}{Stichwortverzeichnis}
+\makeindex
+\usepackage[columns=3,
+            unbalanced=true,
+						columnsep=2em,
+						rule=0pt,
+						indentunit=5pt]{idxlayout}
+%
+
+
+% --------------------------------------------------
+% Farben
+% --------------------------------------------------
+\usepackage{xcolor}
+
+%\renewcommand*\thepart       {\@roman\c@part}
+%\renewcommand*\thepart       {\@arabic\c@part}
+\renewcommand*\thechapter       {\@arabic\c@chapter}
+\renewcommand*\thesection       {\thechapter.\@arabic\c@section}
+\renewcommand*\thetable					{\thechapter.\@arabic\c@table}
+
+%%% longtable doch nicht, weil
+%%% es alle Spalten (auf allen Seiten) gleich breit macht
+%%% \usepackage{longtable}
+\usepackage{supertabular}
+\usepackage{tabularx}
+
+%%% Kein 'Kapitel' in der Kapitelueberschrift
+\renewcommand{\chaptername}{}
+
+%%% --------------------
+%%% defining the header
+%%% --------------------
+\usepackage{scrpage2}
+\pagestyle{scrheadings}
+\ohead{\pagemark}
+\rehead{\rightmark}
+\lohead{\leftmark}
+\ihead{\headmark}
+\chead{}
+%\setheadwidth[-1cm]{textwithmarginpar-1cm}
+%\setheadtopline{1.5pt}
+\setheadsepline{.4pt}
+% gives warning: \setkomafont{pagehead}{\normalfont\sffamily}%\bfseries}
+\renewcommand{\headfont}{\normalfont\sffamily}
+\setkomafont{pagenumber}{\normalfont\sffamily}%\rmfamily}%\slshape}
+% leere fusszeile:
+\lefoot{}\rofoot{}
+\ofoot{}\cfoot{} % Fusszeile bei einseitigem Druck
+
+
+%%% --------------------------------------------------
+%%% Farben
+%%% --------------------------------------------------
+% Farben
+
+%%% --------------------------------------------------
+%%% misc
+%%% --------------------------------------------------
+% immer eine leere letzte gerade Seite pro Kapitel
+\newcommand{\clearemptydoublepage}{\newpage{\pagestyle{empty}\cleardoublepage}}
+
+%%% --------------------------------------------------
+%%% Index und Co.
+%%% --------------------------------------------------
+\renewcommand{\indexname}{Stichwortverzeichnis}
+\usepackage{index}
+\makeindex
+
+\newindex{R}{Ridx}{Rind}{\R Kommandoverzeichnis}
+\renewindex{default}{idx}{ind}{Stichwortverzeichnis}
+
+%\shortindexingon
+%\proofmodetrue
+
+\newcommand{\Ridx}[1]{\cd{#1}\index{R Kommandos@\R Kommandos!#1@\cd{#1}}}
+\newcommand{\idx}[1]{\index{#1}}
+
+%%% Setze den Durchschuss (Zeilenabstand)
+\usepackage{setspace}
+\setstretch{1.0}
+
+
+%%% --------------------------------------------------
+%%% Code Umgebung
+%%% --------------------------------------------------
+% \newcommand{\cd}[1]{\,\texttt{#1}\,}
+\definecolor{CodeColor}{gray}{0.85}
+\newenvironment{CodeShaded}{%
+  \def\FrameCommand{\colorbox{CodeColor}}%
+  \MakeFramed {\FrameRestore}}{
+  \endMakeFramed}
+
+\newenvironment{code}{%
+%\small
+\begin{lstlisting}
+}{%
+\end{lstlisting}
+}
+
+
+\renewcommand{\emph}[1]{\textit{#1}}
+

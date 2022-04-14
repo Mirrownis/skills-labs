@@ -1,0 +1,180 @@
+%%% ----------------------------------------------------------
+%%% Vorlage Abschlussarbeit (LaTeX)
+%%% 
+%%% 03/2017, Prof. Dr. Stefan Etschberger (HSA)
+%%% ----------------------------------------------------------
+\documentclass[12pt,a4paper,%
+	             twoside,   % Fuer Veröffentlichung
+	             openright, % Kapitel immer auf 
+               titlepage,
+               DIV12,
+               pagesize=dvips,%
+               headinclude,
+               footinclude=false,%
+               cleardoublepage=empty,%
+               parskip=half,      % typographisch
+                                  % besser mit Einzug,
+               %pointednumbers,   % das macht die
+                                  % Komaautomatik 
+                                  % dudenkonform
+               %draft%
+               ]{scrbook}
+
+\usepackage{blindtext}
+
+\usepackage{Stil_Abschlussarbeit}
+
+\usepackage[all]{nowidow}
+
+% Literaturdatenbank
+\bibliography{Literatur_Abschlussarbeit}
+
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage[colorlinks=true, 
+            linkcolor=blue!60!black,
+            citecolor=blue!80!black]{hyperref}
+
+\graphicspath{{Bilder/}}
+
+\usepackage{caption}
+\DeclareCaptionLabelFormat{something}{#2.#1.}
+\captionsetup[lstlisting]{labelformat=something}
+
+\usepackage{multirow}
+\usepackage{placeins}
+
+\usepackage{tikz-uml}
+
+\begin{document}
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+%%% --------------------------------------------------
+%%% Titelseite
+%%% --------------------------------------------------
+\begin{titlepage}
+%\title{
+{
+
+\begin{figure}[h]
+\includegraphics[width=(0.4\textwidth)]{Bilder/ITM-Weblogo.png}
+\end{figure}
+\vfill
+
+\large \sffamily
+{\centering\begin{tabular}{c} \toprule
+\LARGE Robotische Automatisierung im Skills Lab \\
+\large Robotic Automatation in Skills Labs \\ 
+\bottomrule
+\end{tabular}\par}
+\vspace{12ex}
+\large%
+
+\noindent
+\textbf{Bachelorarbeit}\\[3ex]
+im Rahmen des Studiengangs\\
+\textbf{Robotik und Autonome Systeme}\\
+der Universität zu Lübeck\\[6ex]
+
+vorgelegt von\\
+\textbf{Eike Schultz}\\[3ex]
+Ausgegeben und betreut von\\
+\textbf{Prof. Dr.-Ing. Andreas Schrader}\\[6ex]
+
+Lübeck, den 11. März 2022
+}
+\end{titlepage}
+%}
+%\author{
+%\maketitle
+
+\chapter*{Erklärung}
+
+Ich versichere an Eides statt, die vorliegende Arbeit selbstständig und nur unter Benutzung der angegebenen Hilfsmittel angefertigt zu haben.
+\vfill
+\hline
+
+%\include{0Abstract}
+%\include{03Danksagung}
+\tableofcontents
+
+
+%%% --------------------------------------------------
+%%% real content
+%%% --------------------------------------------------
+\clearemptydoublepage\cleardoubleemptypage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+\addtocounter{chapter}{1}
+\part{Einleitung\label{Einleitung}}
+\include{1Einleitung}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part{Analyse\label{Analyse}}
+\include{2Analyse}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part{Konzept\label{Konzept}}
+\include{3Konzeption}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part{Implementierung\label{Implementierung}}
+\include{4Implementierung}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part{Diskussion\label{Diskussion}}
+\include{5Diskussion}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part{Fazit\label{Fazit}}
+\include{6Zusammenfassung_und_Ausblick}
+\setcounter{section}{0}
+
+\addtocounter{chapter}{1}
+\part*{Anhang}
+\appendix
+
+\listoffigures % Abbildungsverzeichnis
+\listoftables % Tabellenverzeichnis
+
+%%% --------------------------------------------------
+%%% Bibliographie
+%%% --------------------------------------------------
+
+% \addcontentsline{toc}{section}{Literaturverzeichnis}
+%%% --------------------------------------------------
+%%% Bibliographie
+%%% --------------------------------------------------
+%\renewcommand{\bibfont}{\scriptsize}
+\printbibliography[title={Literaturverzeichnis}, heading=bibintoc]
+
+
+%%% --------------------------------------------------
+%%% Index
+%%% --------------------------------------------------
+{\setkomafont{chapter}{\Huge} % temporarily set chapter font
+\printindex
+}
+
+\end{document}
+
+%%% % dummy indices for page breaks in Index
+%%% \index{GleichungrZZZ@{\hspace*{72ex}}|myNewpage}
+%%% %\index{MaximalZZZ@{\hspace*{72ex}}|myNewpage}
+%%% %\index{ZZZ@{\hspace*{72ex}}|myVspace{8cm}}
+%%% \index{EZZZ@{\hspace*{72ex}}|myVspace{-1ex}}
+%%% \index{Faaa@{\hspace*{72ex}}|myVspace{-1.5ex}}
+%%% \index{FZZZ@{\hspace*{72ex}}|myVspace{-1.5ex}}
+%%% \index{Gaaa@{\hspace*{72ex}}|myVspace{-1.5ex}}
+%%% \index{LZZZ@{\hspace*{72ex}}|myVspace{-.3ex}}
+%%% \index{Maaa@{\hspace*{72ex}}|myVspace{-.5ex}}
+
+
